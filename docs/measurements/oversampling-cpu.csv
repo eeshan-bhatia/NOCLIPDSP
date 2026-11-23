@@ -1,0 +1,5 @@
+quality,latency_samples,microseconds_per_stereo_256
+1,65,24.057
+2,65,70.2523
+4,65,138.038
+8,65,251.535

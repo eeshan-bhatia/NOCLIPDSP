@@ -1,0 +1,7 @@
+# Loaded after compiler/platform rules, which otherwise replace Zig's archive command.
+set(CMAKE_C_CREATE_STATIC_LIBRARY "<CMAKE_AR> ar qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+set(CMAKE_CXX_CREATE_STATIC_LIBRARY "<CMAKE_AR> ar qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> ar qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+set(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> ar qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_FINISH "")
+set(CMAKE_CXX_ARCHIVE_FINISH "")
