@@ -56,6 +56,8 @@ void AudioEngine::prepare(double sampleRate, Parameters p) noexcept
 {
     p = sanitise(p);
     advanced.prepare(sampleRate, p.advanced);
+    useModular=p.modular.active;
+    if(useModular) { if(!modular) modular=std::make_unique<ModularDSP>(); modular->prepare(sampleRate,p.modular,p.advanced); }
     for (auto* r : { &input, &output, &active, &enabled, &drive, &threshold, &shape, &knee, &ceiling, &mix })
         r->prepare(sampleRate);
     for (auto& r : curves) r.prepare(sampleRate);
@@ -71,6 +73,7 @@ void AudioEngine::setParameters(Parameters p) noexcept
 {
     p = sanitise(p);
     advanced.setParameters(p.advanced);
+    if(useModular) modular->set(p.modular,p.advanced);
     input.setTarget(dbToGain(p.inputDb)); output.setTarget(dbToGain(p.outputDb));
     active.setTarget(p.bypass ? 0.0f : 1.0f);
     enabled.setTarget(p.clipEnabled ? 1.0f : 0.0f);
@@ -79,8 +82,7 @@ void AudioEngine::setParameters(Parameters p) noexcept
     ceiling.setTarget(dbToGain(p.ceilingDb)); mix.setTarget(p.mix);
     for (int i = 0; i < curveCount; ++i) curves[i].setTarget(i == p.curve ? 1.0f : 0.0f);
 }
-MeterFrame AudioEngine::process(float* const* channels, int channelCount, int samples,
-                               const float* driveRelief,int factor) noexcept
+MeterFrame AudioEngine::process(float* const* channels, int channelCount, int samples) noexcept
 {
     MeterFrame meter;
     double energy = 0, clipped = 0;
@@ -92,6 +94,7 @@ MeterFrame AudioEngine::process(float* const* channels, int channelCount, int sa
         for(int ch=0;ch<channelCount;++ch)
             if(std::isfinite(channels[ch][i])) linkedAmplitude=std::max(linkedAmplitude,std::abs(static_cast<double>(channels[ch][i])*inGain));
         advanced.advance(linkedAmplitude);
+        if(useModular) modular->advance(linkedAmplitude);
         const float clipBlend = enabled.next(), d = drive.next(), t = threshold.next();
         const float s = shape.next(), k = knee.next(), c = ceiling.next(), m = mix.next();
         std::array<float, curveCount> weights {};
@@ -110,8 +113,7 @@ MeterFrame AudioEngine::process(float* const* channels, int channelCount, int sa
             double wet = linear;
             if (clipBlend > 0 && blend > 0)
             {
-                const float relief=driveRelief?driveRelief[i/std::max(1,factor)]:1;
-                const auto paths = advanced.process(ch, dry, d, t, s, k, weights, weightSum,relief);
+                const auto paths = useModular?modular->process(ch,dry):advanced.process(ch, dry, d, t, s, k, weights, weightSum);
                 const double mixed = (m == 1 ? paths[1] : (m == 0 ? paths[0] : paths[0] * (1 - m) + m * paths[1])) * outGain;
                 const double limited = std::clamp(mixed, -static_cast<double>(c), static_cast<double>(c));
                 // Activity measures frames above threshold or ceiling, not gain reduction.

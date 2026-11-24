@@ -3,7 +3,8 @@
 #include <cstddef>
 #include "Clipper.h"
 #include "AdvancedDSP.h"
-#include "Sidechain.h"
+#include "ModularDSP.h"
+#include <memory>
 
 namespace noclip
 {
@@ -32,7 +33,7 @@ struct Parameters
     float ceilingDb = 0.0f, mix = 1.0f;
     int curve = static_cast<int>(Curve::knee);
     AdvancedParameters advanced;
-    SidechainParameters sidechain;
+    ModularParameters modular;
 };
 
 struct MeterFrame
@@ -48,12 +49,14 @@ public:
     void prepare(double sampleRate, Parameters initial = {}) noexcept;
     void setParameters(Parameters parameters) noexcept;
     void setTable(const CurveTable& table, bool immediate = false) noexcept { advanced.setTable(table, immediate); }
-    MeterFrame process(float* const* channels, int channelCount, int samples,
-                       const float* driveRelief=nullptr, int factor=1) noexcept;
+    MeterFrame process(float* const* channels, int channelCount, int samples) noexcept;
+    void setStageTable(int stage,const CurveTable& table,bool immediate=false) noexcept { if(modular) modular->setTable(stage,table,immediate); }
 private:
     Ramp input, output, active;
     Ramp enabled, drive, threshold, shape, knee, ceiling, mix;
     std::array<Ramp, curveCount> curves;
     AdvancedDSP advanced;
+    std::unique_ptr<ModularDSP> modular;
+    bool useModular=false;
 };
 }

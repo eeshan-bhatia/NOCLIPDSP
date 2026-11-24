@@ -1,54 +1,66 @@
-# Next workflow: focused clipping and waveshaping
+# Five-section workflow - 0.6.0
 
-Status: design agreed in direction by user; not implemented in 0.5.0. Finish and
-validate sidechain/comparison first, then change routing and editor state together.
-Existing DSP should be reused rather than replaced.
+## Navigation and activation
 
-## Product structure
+Exactly five tabs: MASTER, LOW, MID, HIGH, 808 ENGINE. Selecting a tab changes
+only the view and palette. It never enables, disables or resets processing.
+Use each ON switch to activate its section. Multiple sections can run together.
+New instances start with MASTER on, its CLIP on, custom SHAPE off, bands/808 off.
 
-Two main destinations: WAVESHAPER and 808 ENGINE. Sidechain and whole-plugin A/B
-remain shared utilities, alongside oversampling, global input/output, ceiling,
-DC filtering and bypass. No general-purpose effects rack or modulation sequencer.
+LOW/MID/HIGH run in parallel first, MASTER processes their sum, then 808 processes
+the result. This is a fixed serial order, not alternative exclusive modes.
 
-Within WAVESHAPER use a FULL / THREE BAND routing choice and four clearly labelled
-edit targets: MASTER, LOW, MID, HIGH. MASTER is the full-band alternative; it is
-not an extra serial saturation stage after the bands. LOW/MID/HIGH are independent
-shapers running simultaneously in three-band mode, with only one editor visible.
-This avoids the earlier wall of repeated controls. Crossover knobs appear only
-in three-band mode. Bands must retain independent curves and parameters across
-view changes, A/B copies, automation and project recall.
+## CLIP + SHAPE
 
-## Reuse and remove redundancy
+Each shaper stores independent settings and two nine-point curve endpoints.
+The left side contains an analytical clip transfer preview, Drive, Threshold,
+Hardness, Knee and Stage Mix. The right side contains custom curve editing,
+CURVE 1/2, presets, symmetry, inversion, COPY, Bias, Asymmetry and Morph.
+COPY copies the selected endpoint to the other endpoint in this section.
 
-Unify built-in clip curves and editable curves as one waveshaper function selector.
-Retain analytical built-ins so their existing sound is not approximated by nine
-points. Custom point editing, symmetry, invert, presets and curve morph reuse the
-existing editor/LUT worker. Label curve endpoints distinctly from whole-plugin
-A/B (for example CURVE 1 / CURVE 2).
+CLIP and SHAPE have separate switches. When both are on, CLIP precedes SHAPE;
+drive is applied once. Threshold scales both functions. When both are off the
+section passes through, including its Drive. Stage Mix blends local dry/wet.
+Knee operates only for Adjustable knee below full hardness. Bias, Asymmetry and
+Morph operate on custom shaping and are disabled in the UI when SHAPE is off.
 
-One Drive, Threshold, wet Mix and applicable shape controls per selected shaper.
-Show Knee only for the adjustable-knee function. Shape/hardness has no current
-effect on custom LUTs: hide it there unless its behavior is deliberately specified
-and tested. Bias/asymmetry/morph are presented where they operate, never as inert
-knobs. Global Input/Output/Ceiling occur once and are not duplicated per view.
+The crossover knobs are shared by LOW/MID/HIGH. Disabled bands remain in the sum
+unchanged. Enabled identity bands have flat crossover magnitude with LR allpass
+phase. Disabling the last band crossfades back to raw audio. Filter history stays
+warm. Global dry follows active crossover and 808 phase. Wet DC filtering precedes
+global mix/output and sample ceiling. Transitions can blend different bounds;
+this is not a true-peak limiter.
 
-Reuse the tested LR crossover but upgrade its three branches to independent
-nonlinear settings and independently published LUTs. Phase-match the summed dry
-path and keep stereo linkage, sample ceiling and fixed-latency oversampling.
-Parameter IDs and migration must preserve old sessions and automation; hidden
-legacy controls may be necessary even when duplicate UI knobs are removed.
+## 808
 
-808 keeps its clean-sub/dirty-harmonics split, Sub Preserve, Harmonics, Punch and
-Split as distinct tools. Expose one effective dirty-branch Drive and one Output
-trim in the new workflow. Existing global Drive plus bassDrive, and global Output
-plus bassOutput, need migration/legacy handling rather than silently resetting old
-projects or adding their dB values beyond the supported range. Keep blue styling.
+The original six tools remain: Sub Preserve, Harmonics, Drive, Punch, Split and
+Output. The isolated engine uses the original adjustable-knee clipping response.
+Its clean-sub/dirty-harmonics split remains separate from the three-band shapers.
+Presets change these six values and enable 808, without resetting other sections,
+global gains, quality or A/B. Blue styling follows the viewed tab, not whether
+808 is processing. Viewing another tab leaves 808 running if its ON switch is on.
 
-## Acceptance checks before release
+## Recall and migration
 
-Independent band curves survive host recall and whole-plugin A/B; editing one band
-does not alter another. Identity curves reconstruct crossover magnitude/phase.
-Dry/wet alignment, crossover automation, quality/routing transitions, aliasing,
-sidechain behavior and audio callback allocation checks pass at mono/stereo and
-multiple sample rates. Existing projects retain their previous sound. Check the
-minimum-size interface for readable labels and compact knobs in all targets.
+Schema 6 stores all four shapers, section switches, crossovers and 808 in each
+whole-plugin A/B slot. Navigation is editor-local and excluded from DSP snapshots.
+Schema 5 slots migrate independently; removed sidechain settings are discarded.
+Schemas 1-4 initialize both slots from the old state. Old full-band CLIP/SHAPE
+settings and curves map to MASTER. New bands default off. Schema-3 experimental
+band routing retains the earlier simplified migration, not a resurrected patch.
+
+Old 808 projects map to enabled 808, but legacy custom-curve/alternative clipping
+selection and extra global nonlinear drive/threshold are not reproduced by its
+new fixed six-control engine. External-sidechain sound is deliberately removed.
+Review these sessions and host automation: new shaper IDs replace the old
+exclusive CLIP/SHAPE mode and routing automation. Legacy IDs remain for migration,
+not as controls for the new four shapers. Keep the previous build for old sessions
+that require its exact processing.
+
+## Validation
+
+Tests cover parameter-invariant navigation, independent low-band curves, A/B
+recall, malformed state rejection, migration, all-sections-off identity, isolated
+808 equivalence, crossover reconstruction, latency and allocation-free callbacks.
+All five views render offscreen at minimum size. Real FL Studio listening and
+project reload remain user validation priorities.

@@ -48,11 +48,11 @@ public:
     void prepare(double rate,int channels,const std::array<ComparisonSettings,2>&,
                  int selected,const std::array<CurveTable,2>&);
     MeterFrame process(float* const*,int channels,int samples,const std::array<ComparisonSettings,2>&,
-                       int selected,bool match,bool hostBypass,const float* const* key=nullptr,int keyChannels=0) noexcept;
+                       int selected,bool match,bool hostBypass) noexcept;
     void setTable(int slot,const CurveTable& table) noexcept { engines[static_cast<size_t>(slot)].setTable(table); }
     int latency() const noexcept { return engines[0].latency(); }
     int activeQuality() const noexcept { return engines[blend.current<.5f?0:1].activeQuality(); }
-    float sidechainReduction() const noexcept { return engines[blend.current<.5f?0:1].sidechainReduction(); }
+    void setStageTable(int slot,int stage,const CurveTable& table,bool immediate=false) noexcept { engines[static_cast<size_t>(slot)].setStageTable(stage,table,immediate); }
     float matchAttenuation() const noexcept { return matcher.attenuation(blend.current<.5f?0:1); }
     bool ready() const noexcept { return matcher.ready()&&matchWarmup==0; }
     bool switching() const noexcept { return warmup>0||blend.left>0; }

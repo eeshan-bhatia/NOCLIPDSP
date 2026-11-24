@@ -11,9 +11,8 @@ class ProcessingChain
 {
 public:
     void prepare(double rate, int channels, Parameters, int quality, const CurveTable&);
-    MeterFrame process(float* const*, int channels, int samples, Parameters, int quality,
-                       const float* const* sidechain=nullptr,int sideChannels=0) noexcept;
-    float sidechainReduction() const noexcept { return detector.reductionDb(); }
+    MeterFrame process(float* const*, int channels, int samples, Parameters, int quality) noexcept;
+    void setStageTable(int stage,const CurveTable& table,bool immediate=false) noexcept;
     void setTable(const CurveTable&) noexcept;
     int latency() const noexcept { return latencySamples; }
     int activeQuality() const noexcept { return current; }
@@ -43,8 +42,7 @@ private:
     Delay dryDelay;
     std::array<std::array<float,chunkSize>,2> input {};
     CurveTable latest=CurveTable::make();
-    SidechainDetector detector;
-    std::array<float,chunkSize> relief {};
+    std::array<CurveTable,4> stageTables;
     Smooth bypassBlend, finalCeiling, finalEnabled;
     double sampleRate=48000;
     int latencySamples=0, current=0, next=-1, warmup=0, fade=0, fadeLength=960;

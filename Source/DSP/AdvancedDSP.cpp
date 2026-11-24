@@ -80,11 +80,11 @@ double AdvancedDSP::transfer(double x, float t, float s, float k,
     return classic*(1-v[custom])+v[custom]*shaped;
 }
 std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t,float s,float k,
-    const std::array<float,curveCount>& weights,float sum,float driveRelief) noexcept
+    const std::array<float,curveCount>& weights,float sum) noexcept
 {
     const auto ch=static_cast<size_t>(channel);
     double wet=0, aligned=0, activity=0;
-    const double relievedDrive=std::max(1.0,static_cast<double>(d)*driveRelief);
+    const double relievedDrive=std::max(1.0,static_cast<double>(d));
     if(v[full]>0) { wet=v[full]*transfer(dry*relievedDrive,t,s,k,weights,sum); aligned=v[full]*dry; if(std::abs(dry*relievedDrive)>t) activity=v[full]; }
     if(v[multi]>0)
     {
@@ -93,7 +93,7 @@ std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t
         for(size_t i=0;i<3;++i)
         {
             const auto& b=bandValues[i];
-            const double bandDrive=std::max(1.0,static_cast<double>(d)*b[0]*driveRelief);
+            const double bandDrive=std::max(1.0,static_cast<double>(d)*b[0]);
             const double shaped= b[4]>0 ? transfer(parts[i]*bandDrive,t,b[1],k,weights,sum) : parts[i];
             const double mixed=(parts[i]*(1-b[3])+shaped*b[3])*b[2];
             processed+=parts[i]*(1-b[4])+mixed*b[4];
@@ -106,7 +106,7 @@ std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t
         const double attack=std::clamp((fast[0]-slow[0])/(fast[0]+1e-9),0.0,1.0);
         const double bassGain=1+(v[bassDrive]-1)*(1-v[punch]*attack);
         const auto clean=bassClean[ch].process(dry,v[splitG]);
-        const double dirtyDrive=std::max(1.0,static_cast<double>(d)*bassGain*driveRelief);
+        const double dirtyDrive=std::max(1.0,static_cast<double>(d)*bassGain);
         const auto dirty=bassDirty[ch].process(transfer(dry*dirtyDrive,t,s,k,weights,sum),v[splitG]);
         wet+=v[bass]*v[bassOutput]*(clean[0]*v[sub]+dirty[0]*(1-v[sub])
                                   +clean[1]*(1-v[harmonics])+dirty[1]*v[harmonics]);

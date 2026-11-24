@@ -34,8 +34,7 @@ public:
     void advance(double linkedAmplitude = 0) noexcept;
     // Returns phase-matched dry, wet, and threshold activity before mix/output.
     std::array<double, 3> process(int channel, double dry, float drive, float threshold,
-        float shape, float knee, const std::array<float, curveCount>& weights, float weightSum,
-        float driveRelief=1) noexcept;
+        float shape, float knee, const std::array<float, curveCount>& weights, float weightSum) noexcept;
 private:
     enum Control { custom, dc, bias, asym, morph, full, multi, bass, lowG, highG,
                    sub, harmonics, bassDrive, punch, splitG, bassOutput, count };

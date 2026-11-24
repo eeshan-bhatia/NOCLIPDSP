@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(noclip.DSP VERSION 0.5.0 LANGUAGES C CXX)
+project(noclip.DSP VERSION 0.6.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -57,8 +57,7 @@ if(NOCLIP_BUILD_PLUGIN)
     target_sources(noclip.DSP PRIVATE
         Source/PluginProcessor.cpp Source/PluginEditor.cpp
         Source/Parameters/ParameterLayout.cpp Source/UI/TacticalLookAndFeel.cpp
-        Source/DSP/ProcessingChain.cpp Source/DSP/ComparisonEngine.cpp Source/UI/AdvancedPanel.cpp
-        Source/UI/SidechainPanel.cpp)
+        Source/DSP/ProcessingChain.cpp Source/DSP/ComparisonEngine.cpp Source/UI/AdvancedPanel.cpp)
     juce_add_binary_data(noclip_artwork HEADER_NAME NoclipArtwork.h
         NAMESPACE NoclipArtwork SOURCES Assets/icon.png)
     target_link_libraries(noclip.DSP PRIVATE noclip_artwork)

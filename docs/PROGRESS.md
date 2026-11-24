@@ -1,14 +1,30 @@
+# Current release: 0.6.0
+
+Five view-only tabs, independent section enables, parallel band shapers followed
+by MASTER and 808, combined CLIP/SHAPE editors, and independent curves are
+implemented. External sidechain is removed. Whole-plugin A/B, RMS matching,
+oversampling, knobs and blue 808 styling remain. Schema 6 migrates earlier states;
+see WAVESHAPER_WORKFLOW.md for compatibility limits.
+
+Final 0.6.0 validation (2026-11-24): Release VST3 and standalone built; all four
+CTest suites passed; pluginval level 5 SUCCESS. Explicit 808-to-every-other-tab
+checks restore the complete sand/green palette without changing saved DSP state.
+Minimum-size offscreen renders checked all five pages and the return from 808.
+FL Studio listening and real project reload remain unverified for this build.
+
+The historical notes below are superseded by this release.
+
 # Implementation progress
 
 Updated 2026-11-24. Product: noclip.DSP 0.4.0, Windows VST3 and standalone.
 
-## Phases 1 and 2 — implemented
+## Phases 1 and 2 â€” implemented
 
 Buildable JUCE/CMake foundation; mono/stereo; APVTS state; input/output/bypass;
 hard, tanh, arctangent, cubic, knee and asymmetric clipping; smoothed controls;
 ceiling/mix; measured meters; original AGPLv3 license preserved.
 
-## Phase 3 — implemented, native validation
+## Phase 3 â€” implemented, native validation
 
 - Nine-point bounded curve editor; symmetry/half-wave editing and inversion.
 - Linear/Soft/Hard/Fold curve presets; persistent A/B curves, copy and morph.
@@ -18,7 +34,7 @@ ceiling/mix; measured meters; original AGPLv3 license preserved.
 - Actual input/output waveform snapshots; all visible continuous controls use knobs.
 - Reproducible alias spectrum, CPU measurements, latency and allocation tests.
 
-## Phase 4 — revised user scope implemented
+## Phase 4 â€” revised user scope implemented
 
 - 808 Engine with Sub Preserve, Harmonics, Drive, Punch, Split and Output.
 - Stereo-linked attack-sensitive drive reduction; matched clean/dirty LR splits.
@@ -46,13 +62,13 @@ See PHASE34.md and TESTING.md for commands, measurements and qualifications.
 FL Studio listening, project save/reload and complete accessibility remain user
 validation priorities. No production-mastering, true-peak or LUFS claim is made.
 
-## 0.5.0 � sidechain and whole-plugin A/B
+## 0.5.0 — sidechain and whole-plugin A/B
 
 Implemented optional mono/stereo external sidechain, four rotary controls and
 host bus isolation. Relief eases nonlinear drive to unity without ducking clean
 808 branches. Complete A/B snapshots include curves, quality and sidechain;
 copy, host recall, warm switching and optional attenuation-only RMS matching.
-Schema 5 validates both banks and migrates schemas 1�4. Audio callback allocation
+Schema 5 validates both banks and migrates schemas 1–4. Audio callback allocation
 checks now cover matching, sidechain and snapshot switches.
 
 808 uses slate blue (#788e9d background, darker blue surfaces), white text and

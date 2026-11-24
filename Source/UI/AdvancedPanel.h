@@ -1,51 +1,57 @@
 #pragma once
 #include "../PluginProcessor.h"
 #include "TacticalLookAndFeel.h"
-
 class CurveEditor final : public juce::Component
 {
-public:
-    explicit CurveEditor(NoclipProcessor& p) : processor(p) { setTooltipText(); }
-    void paint(juce::Graphics&) override;
-    void mouseDown(const juce::MouseEvent&) override;
-    void mouseDrag(const juce::MouseEvent&) override;
-    void mouseUp(const juce::MouseEvent&) override;
-private:
-    void setTooltipText() { setTitle("Nine point curve editor: drag either half; symmetry lock mirrors edits"); }
-    juce::Rectangle<float> plot() const { return getLocalBounds().toFloat().reduced(12,12); }
-    NoclipProcessor& processor;
-    int dragged=-1, slot=0;
-    bool mirrored=false;
+  public:
+    explicit CurveEditor(NoclipProcessor &p) : processor(p) {}
+    void setStage(int next)
+    {
+        stage = next;
+        repaint();
+    }
+    void paint(juce::Graphics &) override;
+    void mouseDown(const juce::MouseEvent &) override;
+    void mouseDrag(const juce::MouseEvent &) override;
+    void mouseUp(const juce::MouseEvent &) override;
+
+  private:
+    juce::Rectangle<float> plot() const
+    {
+        return getLocalBounds().toFloat().reduced(12);
+    }
+    NoclipProcessor &processor;
+    int stage = 0, dragged = -1, slot = 0;
+    bool mirrored = false;
 };
-class AdvancedPanel final : public juce::Component
+class WorkspacePanel final : public juce::Component
 {
-public:
-    explicit AdvancedPanel(NoclipProcessor&);
+  public:
+    explicit WorkspacePanel(NoclipProcessor &);
     void setPage(int);
-    void refresh();
     void resized() override;
-    void paint(juce::Graphics&) override;
-private:
+    void paint(juce::Graphics &) override;
+    void refresh();
+
+  private:
+    using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
+    using ComboAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+    NoclipProcessor &processor;
+    CurveEditor editor;
+    int page = 0;
     struct Control
     {
-        juce::Slider slider;
+        juce::Slider knob;
         juce::Label label;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment;
+        std::unique_ptr<SliderAttachment> attachment;
     };
-    NoclipProcessor& processor;
-    CurveEditor curve;
-    int page=1;
-    std::array<Control,9> controls;
-    std::array<Control,6> shared;
-    juce::ComboBox slot, curvePreset, bassPreset, nonlinear;
-    juce::ToggleButton symmetry {"SYMMETRY"}, dc {"DC FILTER"};
-    bool gainView=false;
-    juce::TextButton gainViewButton {"GAIN / MIX"};
-    juce::TextButton invert {"INVERT"}, copyAB {"A TO B"}, copyBA {"B TO A"};
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> slotAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> nonlinearAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> symmetryAttachment, dcAttachment;
-    void place(size_t, juce::Rectangle<int>);
-    void applyCurvePreset(int);
-    void copyCurve(int,int);
+    std::array<Control, 14> controls;
+    juce::ToggleButton clip{"CLIP"}, shape{"SHAPE"}, symmetry{"SYMMETRY"};
+    juce::ComboBox family, slot, preset, bassPreset;
+    juce::TextButton invert{"INVERT"}, copy{"COPY"};
+    std::unique_ptr<ButtonAttachment> clipAttachment, shapeAttachment, symmetryAttachment;
+    std::unique_ptr<ComboAttachment> familyAttachment, slotAttachment;
+    void curvePreset(int);
+    void place(int, juce::Rectangle<int>);
 };

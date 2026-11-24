@@ -23,9 +23,16 @@ The title is dark text with a green shadow glow. The graph uses layered
 translucent vector strokes around its orange trace. Knob arcs have restrained
 green highlights; readouts remain high contrast. No game artwork/logos are used.
 
-Version 0.4.0 uses CLIP, SHAPE and 808 ENGINE pages. All continuous controls are
-rotary knobs. SHAPE and 808 have a GAIN / MIX view for shared controls. The former
-multiband page and its host controls were removed to keep the product focused.
+Version 0.6.0 has five view-only tabs: MASTER, LOW, MID, HIGH and 808 ENGINE.
+Each has a separate ON switch. Shared gains, ceiling/mix and crossovers remain
+visible. Four shaper views combine analytical CLIP left and editable SHAPE right.
+808 retains a compact six-knob view. All continuous controls use rotary knobs.
+
+Theme is strictly editor-view based: the 808 tab uses #788e9d background, white
+text, dark slate surfaces and blue glow; leaving it restores every control to the
+sand/green palette even when 808 remains enabled. Tests exercise 808 -> each of
+the other four tabs and compare complete saved audio state before and after.
+
 The existing user-supplied scope logo remains unchanged; high-quality scaling
 and a small vector overdraw preserve its thin upper crosshair at icon size.
 
@@ -40,12 +47,11 @@ host product name are noclip.DSP. Assets/icon.png is the supplied original icon,
 embedded in the editor and Windows application resources. Internal plugin IDs stay stable.
 The knobs use a solid green arc without an internal stripe or pointer.
 
-Graph updates stay at 30 Hz and glows use JUCE vector drawing. The trace previews
-the settled full input-to-output chain using a separate AudioEngine. Dashed blue
-guides show positive and negative sample ceiling amplitudes when clipping is active.
-The CLIP graph is a static transfer preview excluding DC-filter history. SHAPE/808
-show actual latest-block waveform snapshots (blue input, amber output). These are
-approximate GUI samples, not synchronized recordings or true-peak meters.
+Graph updates stay at 30 Hz. The left preview shows the selected analytical clip
+curve, while the right editor shows both custom endpoints and draggable points.
+These are transfer views, not measured waveform or true-peak displays. Global
+ceiling remains visible in its dedicated knob. UI scope atomics are retained
+internally but no longer occupy a separate large waveform panel.
 
 Four fixed meter cells render digits in fixed character slots at no more than 8 Hz.
 Peaks hold for 350 ms then fall at 12 dB/s. RMS power and clipping fraction use

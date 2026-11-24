@@ -1,26 +1,29 @@
 # noclip.DSP
 
-A C++20/JUCE clipper and waveshaper focused on masters, aggressive drums and 808s.
-**0.5.0 is a development build, not a finished mastering limiter.**
-Windows VST3 and standalone; original AGPLv3 license preserved.
+A C++20/JUCE clipper and waveshaper for masters, aggressive drums and 808s.
+**0.6.0 is a development build.** Windows VST3 and standalone; AGPLv3.
 
-## Features
+## Five independent sections
 
-- CLIP: hard, tanh, arctangent, cubic, adjustable-knee and asymmetric curves; smoothed drive, threshold, shape, gain, mix and sample ceiling.
-- SHAPE: nine-point curve editor, bounded cubic interpolation, symmetry lock, inversion, presets, A/B curve copies and continuous morph.
-- 808 ENGINE: sub preservation, harmonics, drive, stereo-linked punch, split frequency and output. Five real factory starting points.
-- Shared 1x/2x/4x/8x FIR oversampling; preallocated banks and smooth live quality changes. Fixed 65-sample latency, including 1x and bypass.
-- Bias/asymmetry, optional 10 Hz DC blocking, input/output waveform views and readable peak/RMS/activity meters.
-- Rotary controls throughout, with a separate GAIN / MIX view in SHAPE and 808.
+MASTER, LOW, MID, HIGH and 808 ENGINE. Tabs only change the view. Each section
+has its own ON switch, and multiple sections can run together.
 
-- SIDECHAIN: external mono/stereo key with sensitivity, drive relief, attack and release. Eases distortion without feeding the key into the output.
-- Whole-plugin A/B snapshots, copy in either direction, smooth switching and optional attenuation-only RMS matching. Separate from the curve editor's A/B morph.
-- The 808 engine has a slate-blue theme, white text, blue glow and compact knob spacing. Other pages retain sand/green styling.
+Signal order: input -> LOW/MID/HIGH in parallel -> MASTER -> 808 -> wet DC filter
+-> global mix/output -> sample ceiling. Disabled bands pass their range through.
+When all three bands are off, the crossover leaves the audible path.
 
-See [sidechain and comparison usage](docs/SIDECHAIN_AB.md). The next planned
-workflow consolidates CLIP/SHAPE and introduces independently editable band
-waveshapers; that redesign is **not implemented in 0.5.0**. See
-[focused waveshaper design](docs/WAVESHAPER_WORKFLOW.md).
+Each of the four shaper sections has CLIP on the left and SHAPE on the right.
+Enable either or both; clipping precedes custom shaping. Drive, Threshold and
+Stage Mix are shared. Built-in curve families, hardness, knee, nine editable
+points, symmetry, inversion, presets, two curve endpoints and morph are retained
+independently for every section.
+
+808 keeps Sub Preserve, Harmonics, Drive, Punch, Split and Output, plus its blue
+palette and compact knobs. Oversampling, whole-plugin A/B and attenuation-only
+RMS matching remain shared. **External sidechain has been removed.**
+
+See [workflow and state notes](docs/WAVESHAPER_WORKFLOW.md),
+[comparison guide](docs/COMPARISON.md) and [parameters](docs/PARAMETERS.md).
 
 ## Build
 
@@ -45,8 +48,9 @@ the same plugin ID. Native setup and pluginval: [BUILDING](docs/BUILDING.md).
 
 ## Validation and limits
 
-Four CTest suites cover clipping, curve publication, state migration, latency,
-alias reduction, crossovers, synthetic 808s and allocation-free quality changes.
+Four CTest suites cover clipping, curve publication, state migration, independent
+band shaping, navigation/theme invariance, latency, alias reduction, crossovers,
+808 equivalence and allocation-free processing/quality changes.
 Pluginval strictness level 5 checks the host-facing plugin.
 
 ![Oversampling comparison](docs/measurements/oversampling-spectrum.png)
@@ -62,8 +66,8 @@ output gain/ceiling still affect it. No LUFS, true-peak or dynamic limiter is cl
 approximation, not perceptual loudness normalization. FL Studio listening/project recall is not yet
 validated by this build's automated tests.
 
-Schema 4 saves all current controls and both curves. Earlier states migrate
-conservatively. Output now spans -48..+24 dB; review Output automation from older
+Schema 6 saves every section and both whole-plugin snapshots. Earlier states
+migrate with the compatibility limits described in WAVESHAPER_WORKFLOW.md. Output now spans -48..+24 dB; review Output automation from older
 -48..+12 dB builds because normalized mappings changed.
 
 [Progress](docs/PROGRESS.md) | [Architecture](docs/ARCHITECTURE.md) |

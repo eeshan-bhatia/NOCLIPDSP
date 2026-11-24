@@ -38,11 +38,15 @@ Native preview checks cover the CLIP/SHAPE/808 pages, mirrored point dragging,
 knob-only controls, shared gain/mix access, presets, readability and logo rendering.
 Audio input stayed muted during UI automation. The user previously tested Phase 2
 in FL Studio; Phase 3/808 FL Studio listening and project recall still need testing.
-0.5.0 adds automated external-key routing/isolation, envelope timing, clean 808
-preservation, complete A/B recall/copy, 6 dB RMS matching, 12 dB trim cap, silence,
-exact settled host bypass at 8x and processing-allocation checks. Minimum-size
-CLIP/808/SIDECHAIN editors render offscreen into build-native/*-preview.png.
-The editor rendering opens no user windows or audio devices.
+## 0.6.0
 
-FL Studio sidechain routing, subjective matching and project reload remain to be
-checked in the real host. No true-peak, LUFS or dynamic limiting is claimed.
+Sidechain tests are replaced with assertions that its bus and controls are absent.
+ComparisonTests checks navigation through all five tabs without parameter writes,
+independent band curves, A/B recall/copy, invalid inactive state rejection,
+migration, band distortion, custom LUT audio effect, identity with sections off,
+and isolated-808 equivalence. Allocation checks include modular quality switching
+and A/B. Offscreen images: build-native/workspace-0.png through workspace-4.png.
+
+Theme regression explicitly selects 808 then each of the other four tabs while
+808 remains enabled. It checks palette colours and complete state equality;
+workspace-return-from-808.png shows the restored sand/green view.

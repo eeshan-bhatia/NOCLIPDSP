@@ -11,8 +11,7 @@ void ComparisonEngine::prepare(double rate,int channels,const std::array<Compari
     matcher.prepare(sampleRate); warmup=matchWarmup=0; wasMatching=false;
 }
 MeterFrame ComparisonEngine::process(float* const* channels,int channelCount,int samples,
-    const std::array<ComparisonSettings,2>& settings,int selected,bool match,bool hostBypass,
-    const float* const* key,int keyChannels) noexcept
+    const std::array<ComparisonSettings,2>& settings,int selected,bool match,bool hostBypass) noexcept
 {
     MeterFrame meters;
     if(channelCount<1||channelCount>2||samples<=0) return meters;
@@ -33,8 +32,6 @@ MeterFrame ComparisonEngine::process(float* const* channels,int channelCount,int
         const bool both=match||warmup>0||blend.left>0;
         const int audible=blend.current<.5f?0:1;
         std::array<float,2> clipped {};
-        const float* keyOffset[2]{};
-        if(key) for(int ch=0;ch<std::clamp(keyChannels,0,2);++ch) keyOffset[ch]=key[ch]+offset;
         for(int ch=0;ch<channelCount;++ch) for(int i=0;i<n;++i)
         {
             const float raw=channels[ch][offset+i];
@@ -47,7 +44,7 @@ MeterFrame ComparisonEngine::process(float* const* channels,int channelCount,int
             auto p=settings[static_cast<size_t>(slot)].parameters; p.bypass=p.bypass||hostBypass;
             float* pointers[]{work[slot][0].data(),work[slot][1].data()};
             clipped[static_cast<size_t>(slot)]=engines[static_cast<size_t>(slot)].process(pointers,channelCount,n,p,
-                settings[static_cast<size_t>(slot)].quality,key?keyOffset:nullptr,keyChannels).clippingActivity;
+                settings[static_cast<size_t>(slot)].quality).clippingActivity;
         }
         for(int i=0;i<n;++i)
         {
