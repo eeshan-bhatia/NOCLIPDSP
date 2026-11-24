@@ -1,0 +1,72 @@
+name: macOS prerelease build
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  universal:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned dependencies and release input
+        shell: bash
+        run: |
+          mkdir -p .tools
+          git clone --depth 1 --branch 9.0.5 https://github.com/juce-framework/JUCE.git .tools/JUCE
+          test "$(git -C .tools/JUCE rev-parse HEAD)" = d60b7a78030661574a615b586d9325ba7a7fa7dd
+          curl --fail --location --retry 3 -o .tools/source.zip https://github.com/eeshan-bhatia/NOCLIPDSP/releases/download/v0.6.0/noclip.DSP-0.6.0-Source.zip
+          echo '6312bb0ed26b4d4e2c92ac5161c2d3c4dbe9e41d92c427b4ddbfb4707959631d  .tools/source.zip' | shasum -a 256 -c -
+          unzip -p .tools/source.zip noclip.DSP-0.6.0-Source/release-inputs/cs_regular.ttf > .tools/cs_regular.ttf
+      - name: Configure universal Release
+        run: >-
+          cmake -S . -B build-macos -G Xcode
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          -DNOCLIP_JUCE_PATH="${{ github.workspace }}/.tools/JUCE"
+          -DNOCLIP_FONT_FILE="${{ github.workspace }}/.tools/cs_regular.ttf"
+      - name: Build
+        run: cmake --build build-macos --config Release --parallel 3
+      - name: Test Apple Silicon
+        run: ctest --test-dir build-macos -C Release --output-on-failure
+      - name: Test Intel under Rosetta
+        shell: bash
+        run: |
+          if ! arch -x86_64 /usr/bin/true; then
+            sudo softwareupdate --install-rosetta --agree-to-license
+          fi
+          cd build-macos
+          for test in DSPTests ClipperTests AdvancedTests StateTests; do
+            arch -x86_64 "Release/$test"
+          done
+      - name: Validate VST3 on both architectures
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 -o .tools/pluginval.zip https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip
+          ditto -x -k .tools/pluginval.zip .tools/pluginval
+          validator="$(find .tools/pluginval -path '*/Contents/MacOS/pluginval' -type f -print -quit)"
+          test -n "$validator"
+          bundle="$PWD/build-macos/noclip.DSP_artefacts/Release/VST3/noclip.DSP.vst3"
+          lipo -verify_arch arm64 x86_64 "$bundle/Contents/MacOS/noclip.DSP"
+          codesign --force --sign - "$bundle"
+          codesign --verify --deep --strict --verbose=2 "$bundle"
+          for architecture in arm64 x86_64; do
+            arch -"$architecture" "$validator" --strictness-level 5 --random-seed 12345 --timeout-ms 60000 --validate "$bundle" > "build-macos/pluginval-$architecture.txt" 2>&1 || { cat "build-macos/pluginval-$architecture.txt"; exit 1; }
+            tail -12 "build-macos/pluginval-$architecture.txt"
+          done
+      - name: Package
+        run: python3 scripts/Package-MacOS.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macOS-release
+          path: build-macos-release/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macOS-validation
+          path: |
+            build-macos/Testing/Temporary/LastTest.log
+            build-macos/pluginval-*.txt
