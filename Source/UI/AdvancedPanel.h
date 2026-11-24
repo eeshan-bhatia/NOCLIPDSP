@@ -18,7 +18,7 @@ class CurveEditor final : public juce::Component
   private:
     juce::Rectangle<float> plot() const
     {
-        return getLocalBounds().toFloat().reduced(12);
+        return getLocalBounds().toFloat().reduced(12).withTrimmedTop(16);
     }
     NoclipProcessor &processor;
     int stage = 0, dragged = -1, slot = 0;

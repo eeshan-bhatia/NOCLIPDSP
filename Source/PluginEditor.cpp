@@ -169,7 +169,7 @@ void NoclipEditor::paint(juce::Graphics &g)
     g.setColour(look.ink);
     g.fillPath(path);
     g.setFont(look.font(13));
-    g.drawText("BANDS > MASTER > 808 / 0.6.0", 112, 76, 460, 20, juce::Justification::centredLeft);
+    g.drawText("3 BAND WAVESHAPER WITH 808 SATURATION", 112, 76, 460, 20, juce::Justification::centredLeft);
     g.setColour(look.edge);
     g.drawHorizontalLine(380, 24.f, static_cast<float>(getWidth() - 24));
     const char *names[]{"IN", "OUT", "RMS", "CLIP"};

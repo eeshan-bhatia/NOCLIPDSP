@@ -1,5 +1,11 @@
 # Current release: 0.6.0
 
+Graph feedback update: white local RESULT overlays visualize clip/shape/mix
+controls in each section; clip previews include threshold reference guides.
+Subtitle updated. 808 meter fill is white, with dim inactive GODMODE and strong
+white glow in its top tier. Transfer-preview/DSP comparisons, all existing tests
+and pluginval level 5 pass; on/off meter and graph renders visually checked.
+
 808 SIGNAL MONITOR now shows low-pass-filtered input/output following 808 Split.
 A stereo low-end peak meter sits on its right; GODMODE is the top (-3 dBFS+) tier.
 Analysis is display-only. Filter rejection, stereo metering, release, rolling

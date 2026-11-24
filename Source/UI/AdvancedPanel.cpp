@@ -1,4 +1,5 @@
 #include "AdvancedPanel.h"
+#include "../DSP/StagePreview.h"
 namespace
 {
 float raw(NoclipProcessor &p, const char *id)
@@ -34,9 +35,34 @@ void CurveEditor::paint(juce::Graphics &g)
             else
                 line.lineTo(x, y);
         }
-        g.setColour(bank == selected ? amber : blue.withAlpha(.45f));
+        g.setColour(bank == selected ? amber.withAlpha(.65f) : blue.withAlpha(.35f));
         g.strokePath(line, juce::PathStrokeType(bank == selected ? 2.5f : 1));
     }
+    const auto section = processor.readParameters().modular.stages[static_cast<size_t>(stage)];
+    juce::Path result;
+    for (int i = 0; i <= 256; ++i)
+    {
+        const double x = -1 + 2. * i / 256;
+        const double y = noclip::previewStage(x, section, tables);
+        const float px = area.getX() + area.getWidth() * static_cast<float>(i) / 256,
+                    py = area.getCentreY() -
+                         static_cast<float>(std::clamp(y, -1., 1.)) * area.getHeight() * .5f;
+        if (i == 0)
+            result.startNewSubPath(px, py);
+        else
+            result.lineTo(px, py);
+    }
+    g.setColour(juce::Colours::white.withAlpha(.1f));
+    g.strokePath(result, juce::PathStrokeType(7));
+    g.setColour(juce::Colours::white.withAlpha(.9f));
+    g.strokePath(result, juce::PathStrokeType(1.5f));
+    g.setFont(theme.font(10));
+    g.setColour(amber);
+    g.drawText("POINTS", 8, 0, 80, 24, juce::Justification::centredLeft);
+    g.setColour(juce::Colours::white);
+    g.drawText("RESULT", 92, 0, 76, 24, juce::Justification::centredLeft);
+    g.setColour(sand.withAlpha(.65f));
+    g.drawText("LOCAL PREVIEW", getWidth() - 150, 0, 140, 24, juce::Justification::centredRight);
     for (int i = 0; i < 9; ++i)
     {
         const auto id = noclip::parameters::pointId(stage, selected, i);
@@ -280,6 +306,18 @@ void WorkspacePanel::paint(juce::Graphics &g)
     g.drawHorizontalLine(static_cast<int>(graph.getCentreY()), graph.getX(), graph.getRight());
     const float drive = noclip::dbToGain(static_cast<float>(controls[0].knob.getValue())),
                 threshold = noclip::dbToGain(static_cast<float>(controls[1].knob.getValue()));
+    if (clip.getToggleState())
+    {
+        const float dashes[]{3, 4};
+        g.setColour(look.blue.brighter(.4f).withAlpha(.7f));
+        for (float sign : {-1.f, 1.f})
+        {
+            const float y = graph.getCentreY() - sign * threshold * 38;
+            g.drawDashedLine(juce::Line<float>(graph.getX(), y, graph.getRight(), y), dashes, 2, 1);
+            const float x = graph.getCentreX() + sign * (threshold / drive) * graph.getWidth() / 4;
+            g.drawDashedLine(juce::Line<float>(x, graph.getY(), x, graph.getBottom()), dashes, 2, 1);
+        }
+    }
     juce::Path path;
     for (int i = 0; i <= 256; ++i)
     {
@@ -371,22 +409,36 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
     const float meterX = graph.getRight() + 18, meterW = 18, meterTop = graph.getY() + 24,
                 meterHeight = graph.getHeight() - 26;
     const bool godmode = db >= -3;
-    g.setFont(look.font(10));
-    g.setColour(godmode ? look.glow : look.ink.withAlpha(.45f));
-    g.drawText("GODMODE", static_cast<int>(graph.getRight() + 3), static_cast<int>(graph.getY()), 76, 20,
-               juce::Justification::centred);
+    const auto white = juce::Colours::white;
+    juce::GlyphArrangement tierText;
+    tierText.addLineOfText(look.font(10), "GODMODE", 0, 0);
+    juce::Path tierPath;
+    tierText.createPath(tierPath);
+    const auto textBox = juce::Rectangle<float>(graph.getRight() + 3, graph.getY(), 76, 20);
+    const auto textBounds = tierPath.getBounds();
+    tierPath.applyTransform(juce::AffineTransform::translation(
+        textBox.getCentreX() - textBounds.getCentreX(), textBox.getCentreY() - textBounds.getCentreY()));
+    if (godmode)
+    {
+        juce::DropShadow(white.withAlpha(.8f), 12, {}).drawForPath(g, tierPath);
+        juce::DropShadow(white.withAlpha(.95f), 5, {}).drawForPath(g, tierPath);
+        g.setColour(white.withAlpha(.2f));
+        g.strokePath(tierPath, juce::PathStrokeType(2));
+    }
+    g.setColour(white.withAlpha(godmode ? 1.f : .2f));
+    g.fillPath(tierPath);
     for (int i = 0; i < 20; ++i)
     {
         const float segmentH = meterHeight / 20;
         auto segment =
             juce::Rectangle<float>(meterX, meterTop + meterHeight - (i + 1) * segmentH, meterW, segmentH - 2);
-        const bool lit = normal > static_cast<float>(i) / 20;
+        const bool lit = normal > static_cast<float>(i) / 20 || (i == 19 && godmode);
         if (lit)
         {
-            g.setColour(look.glow.withAlpha(.13f));
+            g.setColour(white.withAlpha(.13f));
             g.fillRect(segment.expanded(3));
         }
-        g.setColour(lit ? look.glow.withAlpha(.45f + .55f * static_cast<float>(i) / 19)
+        g.setColour(lit ? white.withAlpha(.65f + .35f * static_cast<float>(i) / 19)
                         : look.sand.withAlpha(.12f));
         g.fillRect(segment);
     }

@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "DSP/StagePreview.h"
 #include <iostream>
 int comparisonTests()
 {
@@ -258,6 +259,24 @@ int comparisonTests()
         juce::PNGImageFormat png;
         png.writeImageToStream(scopeImage, *scopeFile);
     }
+    // Offscreen visual fixtures for inactive and full-scale meter styling.
+    const float measuredPeak = q->lowEndPeak.load();
+    for (int full = 0; full < 2; ++full)
+    {
+        q->lowEndPeak.store(full ? 1.f : .03f);
+        auto frame = editor->createComponentSnapshot(editor->getLocalBounds());
+        auto file = juce::File::getCurrentWorkingDirectory()
+                        .getChildFile(full ? "workspace-godmode-on.png" : "workspace-godmode-off.png")
+                        .createOutputStream();
+        if (file)
+        {
+            file->setPosition(0);
+            file->truncate();
+            juce::PNGImageFormat png;
+            png.writeImageToStream(frame, *file);
+        }
+    }
+    q->lowEndPeak.store(measuredPeak);
     // Independent stages: low distortion should alter bass while high processing changes highs.
     noclip::Parameters params;
     params.clipEnabled = true;
@@ -362,6 +381,60 @@ int comparisonTests()
         offset += n;
     }
     check(one == two, "modular DSP invariant to host block partitioning");
+    // The result overlay must match the actual settled local stage transfer.
+    for (int mode = 0; mode < 4; ++mode)
+    {
+        noclip::Parameters previewParameters;
+        previewParameters.clipEnabled = true;
+        previewParameters.modular.active = true;
+        auto &stage = previewParameters.modular.stages[0];
+        stage.enabled = true;
+        stage.clip = (mode & 1) != 0;
+        stage.custom = (mode & 2) != 0;
+        stage.drive = 9;
+        stage.threshold = -6;
+        stage.hardness = .3f;
+        stage.knee = .6f;
+        stage.bias = .18f;
+        stage.asymmetry = -.35f;
+        stage.morph = .65f;
+        stage.mix = .4f;
+        noclip::AudioEngine actual;
+        actual.prepare(48000, previewParameters);
+        auto folded = noclip::identityPoints;
+        for (auto &point : folded)
+            point = std::sin(point * std::numbers::pi_v<float>);
+        const auto table = noclip::CurveTable::make(noclip::identityPoints, folded);
+        actual.setStageTable(0, table, true);
+        std::array<float, 257> signal;
+        for (size_t i = 0; i < signal.size(); ++i)
+            signal[i] = -1 + 2.f * static_cast<float>(i) / 256;
+        float *ptr[]{signal.data()};
+        actual.process(ptr, 1, 257);
+        for (size_t i = 0; i < signal.size(); ++i)
+            check(std::abs(signal[i] -
+                           noclip::previewStage(-1 + 2. * static_cast<double>(i) / 256, stage, table)) < 1e-5,
+                  "graph result matches combined clip/shape/mix DSP");
+    }
+    q->setParameter("masterEnabled", 1);
+    q->setParameter("masterCustom", 1);
+    q->setParameter("masterDrive", 6);
+    q->setParameter("masterThreshold", -6);
+    q->setParameter("masterBias", .2f);
+    q->setParameter("masterAsymmetry", -.3f);
+    q->setParameter("masterMix", .6f);
+    editor->selectPage(0);
+    auto graphFrame = editor->createComponentSnapshot(editor->getLocalBounds());
+    auto graphFile = juce::File::getCurrentWorkingDirectory()
+                         .getChildFile("workspace-result-preview.png")
+                         .createOutputStream();
+    if (graphFile)
+    {
+        graphFile->setPosition(0);
+        graphFile->truncate();
+        juce::PNGImageFormat png;
+        png.writeImageToStream(graphFrame, *graphFile);
+    }
     std::cout << "Modular/A-B failures: " << failures << '\n';
     return failures;
 }

@@ -84,3 +84,17 @@ the larger filtered output peak across stereo channels, with 350 ms exponential
 release. Its display spans -60 to 0 dBFS; GODMODE lights at -3 dBFS and above.
 Waveforms remain left-channel previews; the footer shows the cutoff. GODMODE is a
 visual level tier, not a processing mode. Filters never alter audible audio.
+
+Meter styling: lit low-end segments are white. GODMODE is dim white below its
+top tier and full white with layered white glow at -3 dBFS and above. The waveform
+and other 808 accents remain blue. Offscreen on/off fixtures check the contrast.
+
+
+Shaper visual feedback: amber points and endpoint lines remain editable. A white
+RESULT overlay previews the settled local CLIP -> SHAPE -> Stage Mix transfer,
+including Drive, Threshold, Hardness, Knee, Bias, Asymmetry and Morph. It previews
+the section's configured sound even when its ON switch is off. Global gains,
+global mix/ceiling, crossover phase and DC filtering are intentionally excluded.
+The clip graph adds dashed horizontal threshold references and vertical input
+references at threshold/drive; soft curves do not necessarily begin bending there.
+The subtitle reads: 3 BAND WAVESHAPER WITH 808 SATURATION.
