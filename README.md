@@ -5,21 +5,21 @@ A C++20/JUCE clipper and waveshaper for masters, aggressive drums and 808s.
 
 ## Five independent sections
 
-MASTER, LOW, MID, HIGH and 808. Tabs only change the view. Each section
-has its own ON switch, and multiple sections can run together.
+MASTER, LOW, MID, HIGH and 808 can be enabled independently,
+and multiple sections can run together.
 
 Signal order: input -> LOW/MID/HIGH in parallel -> MASTER -> 808 -> wet DC filter
 -> global mix/output -> sample ceiling. Disabled bands pass their range through.
 When all three bands are off, the crossover leaves the audible path.
 
-Each of the four shaper sections has CLIP on the left and SHAPE on the right.
+Each of the four shaper sections provides CLIP and SHAPE processing.
 Enable either or both; clipping precedes custom shaping. Drive, Threshold and
 Stage Mix are shared. Built-in curve families, hardness, knee, nine editable
 points, symmetry, inversion, presets, two curve endpoints and morph are retained
 independently for every section.
 
-808 keeps Sub Preserve, Harmonics, Drive, Punch, Split and Output, plus its blue
-palette and compact knobs. Oversampling, whole-plugin A/B and attenuation-only
+808 provides Sub Preserve, Harmonics, Drive, Punch, Split and Output.
+Oversampling, whole-plugin A/B and attenuation-only
 RMS matching remain shared. **External sidechain has been removed.**
 
 See [workflow and state notes](docs/WAVESHAPER_WORKFLOW.md),
@@ -38,8 +38,6 @@ ctest --test-dir build -C Release --output-on-failure
 
 Use `Visual Studio 18 2026` for VS 2026. JUCE 9.0.5 is pinned at
 `d60b7a78030661574a615b586d9325ba7a7fa7dd`; `NOCLIP_JUCE_PATH` selects a local checkout.
-`NOCLIP_FONT_FILE` optionally embeds a locally supplied Counter-Strike TTF;
-otherwise the UI uses Consolas. The repository does not distribute the font.
 
 Outputs: `build/noclip.DSP_artefacts/Release/Standalone/noclip.DSP.exe` and
 `build/noclip.DSP_artefacts/Release/VST3/noclip.DSP.vst3`. Close the DAW, replace the
@@ -49,7 +47,7 @@ the same plugin ID. Native setup and pluginval: [BUILDING](docs/BUILDING.md).
 ## Validation and limits
 
 Four CTest suites cover clipping, curve publication, state migration, independent
-band shaping, navigation/theme invariance, latency, alias reduction, crossovers,
+band shaping, latency, alias reduction, crossovers,
 808 equivalence and allocation-free processing/quality changes.
 Pluginval strictness level 5 checks the host-facing plugin.
 
@@ -71,13 +69,13 @@ migrate with the compatibility limits described in WAVESHAPER_WORKFLOW.md. Outpu
 -48..+12 dB builds because normalized mappings changed.
 
 [Progress](docs/PROGRESS.md) | [Architecture](docs/ARCHITECTURE.md) |
-[Parameters](docs/PARAMETERS.md) | [UI](docs/UI.md) | [Testing](docs/TESTING.md)
+[Parameters](docs/PARAMETERS.md) | [Testing](docs/TESTING.md)
 
 ## License
 
 [AGPLv3](LICENSE). JUCE is dual licensed under AGPLv3 or commercial terms:
 [JUCE license](https://github.com/juce-framework/JUCE/blob/9.0.5/LICENSE.md),
 [third-party inventory](https://github.com/juce-framework/JUCE/blob/9.0.5/JUCE.spdx.json).
-Distribution outside AGPLv3 terms may require a commercial JUCE license. Confirm
-permission before distributing a build containing the externally supplied font.
+Distribution outside AGPLv3 terms may require a commercial JUCE license.
+Confirm redistribution permission for any externally supplied assets.
 Dependencies, SDKs, caches and compiled binaries are ignored.

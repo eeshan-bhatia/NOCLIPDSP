@@ -1,7 +1,7 @@
 # Phase 3 and focused Phase 4 (0.4.0)
 
 The user revised the scope to a master/808 clipper. General multiband controls were
-removed after their prototype. Current pages are CLIP, SHAPE and 808 ENGINE.
+removed after their prototype.
 Sidechain and level-matched whole-plugin A/B are next, not part of this update.
 
 ## Waveshaping
@@ -106,8 +106,8 @@ allpasses; it is retained for research/testing but not exposed as a product feat
 
 - Curve ordinates update via worker publication, with roughly 10 ms polling and
   20 ms crossfade. They are not sample-accurate automation targets.
-- Waveforms show approximate latest blocks. Peak/RMS/activity are not gain reduction,
-  integrated loudness or true-peak meters. Soft shaping can occur below the activity
-  threshold, so activity is not a measure of all nonlinear change.
+- Peak/RMS/activity measurements are not gain reduction, integrated loudness or
+  true peak. Soft shaping can occur below the activity threshold, so activity
+  is not a measure of all nonlinear change.
 - No external sidechain, matched full-parameter A/B, LUFS or dynamic limiter yet.
 - Native automated validation is not a completed FL Studio listening/recall test.

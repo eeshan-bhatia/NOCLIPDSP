@@ -24,23 +24,7 @@ The worker builds four LUT pairs for each A/B slot. Eight SPSC mailboxes publish
 completed curves without audio locks. Pending tables are retained until their
 points match the audio snapshot. Prepare synchronously installs all tables.
 Audio attempts one bounded parameter read and retains the previous snapshot on
-transaction overlap. GUI/state transactions use a non-audio mutex.
+transaction overlap. State transactions use a mutex outside the audio callback.
 
-Tabs reattach controls to independent parameters without writing them. ON switches
-control processing. Navigation is local and excluded from audio state. Schema 6
-stores both complete configurations. Legacy IDs remain for validation/migration.
-The compact editor uses a clip-transfer preview and editable custom curve.
-
-The 808 visualizer reads a 2048-sample rolling atomic input/output history and a
-published write position. Large blocks retain their latest 2048 samples. The GUI
-may read across a concurrent write, so traces are explicitly approximate. No audio
-samples are altered by the monitor; no callback locks or allocations are added.
-
-
-808 monitor update: input/output traces now use separate analysis-only 24 dB/oct
-LR low-pass filters following the 808 Split setting (40-400 Hz), with a smoothed
-cutoff. The title is 808 SIGNAL MONITOR. The right-hand segmented meter measures
-the larger filtered output peak across stereo channels, with 350 ms exponential
-release. Its display spans -60 to 0 dBFS; GODMODE lights at -3 dBFS and above.
-Waveforms remain left-channel previews; the footer shows the cutoff. GODMODE is a
-visual level tier, not a processing mode. Filters never alter audible audio.
+Schema 6 stores both complete configurations. Legacy IDs remain for
+validation and migration.

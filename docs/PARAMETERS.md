@@ -29,8 +29,8 @@ bassEnabled defaults off. 808 retains subPreserve (0..1, default 1), harmonics
 (0..1, .5), bassDrive (0..36 dB, 0), punch (0..1, 0), splitHz (40..400 Hz, 120),
 and bassOutput (-24..12 dB, 0). abMatch defaults off.
 
-Curve points are non-automatable editor controls. Scalar DSP controls are smoothed
-and automatable. Double-click knobs for defaults. Viewing a tab is not a parameter.
+Curve ordinates are saved but are not host-automatable. Scalar DSP parameters
+are smoothed and automatable.
 
 Schema 6 validates exact IDs, ranges, discrete choices and both comparison slots
 before replacing anything. Root and active slot must agree. Schemas 1-5 migrate;

@@ -16,7 +16,7 @@ input arrays each block so nonlinear output is not repeatedly reprocessed.
 | Asymmetric | 10.9038 |
 
 Single wall-clock observations, not real-time deadline guarantees or DAW CPU
-readings. Excludes host/GUI overhead and future oversampling/multiband/limiting.
+readings. Excludes host overhead and future oversampling/multiband/limiting.
 Hardware identity was not collected, so cross-machine comparisons are unjustified.
 Printed RMS checksums keep outputs observable.
 

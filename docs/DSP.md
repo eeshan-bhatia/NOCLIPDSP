@@ -50,14 +50,14 @@ Automated ceiling values ramp for 20 ms.
 
 Finite-duration linear ramps advance once per frame so stereo control trajectories
 match. Curves are memoryless; channels share controls, not an envelope detector.
-No dynamic storage, filesystem, locks or GUI access occurs in engine processing.
+No dynamic storage, filesystem access or locks occur in engine processing.
 Latency is zero; dry and wet are naturally aligned.
 
 Input/output peak is max(abs(x)). RMS uses double-precision energy accumulation
 over both channels and the latest block. Clipping activity is the proportion of
 samples whose driven magnitude exceeds T or whose pre-ceiling magnitude exceeds
 Ceiling, weighted by enable/bypass transitions. It is an activity indicator, not
-gain reduction; soft saturation can begin below T. UI sampling can miss short events.
+gain reduction; soft saturation can begin below T.
 
 Nonlinear functions generate harmonics; harmonics above Nyquist fold into the
 audible spectrum at the current 1x rate. No anti-aliasing claim is made.
