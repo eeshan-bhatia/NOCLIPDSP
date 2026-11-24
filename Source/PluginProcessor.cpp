@@ -186,6 +186,12 @@ void NoclipProcessor::prepareToPlay(double rate, int)
         for (int stage = 0; stage < 4; ++stage)
             engine->setStageTable(slot, stage, curveFor(audioValues[slot], stage), true);
     pending.fill(false);
+    for (size_t i = 0; i < scopeSize; ++i)
+    {
+        scopeIn[i].store(0);
+        scopeOut[i].store(0);
+    }
+    scopeHead.store(0);
     setLatencySamples(engine->latency());
     actualQuality.store(engine->activeQuality());
 }
@@ -246,19 +252,22 @@ void NoclipProcessor::processAudio(juce::AudioBuffer<float> &buffer, juce::MidiB
             }
         }
     auto main = getBusBuffer(buffer, false, 0);
-    const int points = std::min(256, main.getNumSamples());
-    for (int i = 0; i < points; ++i)
-        scopeIn[static_cast<size_t>(i)].store(main.getSample(0, i));
-    const auto meters =
-        engine->process(main.getArrayOfWritePointers(), main.getNumChannels(), main.getNumSamples(),
-                        audioSettings, audioSelected, match->load() > .5f, hostBypass);
-    for (int i = 0; i < points; ++i)
-        scopeOut[static_cast<size_t>(i)].store(main.getSample(0, i));
-    for (int i = points; i < 256; ++i)
+    const int count = main.getNumSamples();
+    const size_t head = scopeHead.load(std::memory_order_relaxed);
+    // For large host blocks only the most recent history needs publishing.
+    const int first = std::max(0, count - static_cast<int>(scopeSize));
+    for (int i = first; i < count; ++i)
     {
-        scopeIn[static_cast<size_t>(i)].store(0);
-        scopeOut[static_cast<size_t>(i)].store(0);
+        const float x = main.getSample(0, i);
+        scopeIn[(head + static_cast<size_t>(i)) % scopeSize].store(std::isfinite(x) ? x : 0,
+                                                                   std::memory_order_relaxed);
     }
+    const auto meters = engine->process(main.getArrayOfWritePointers(), main.getNumChannels(), count,
+                                        audioSettings, audioSelected, match->load() > .5f, hostBypass);
+    for (int i = first; i < count; ++i)
+        scopeOut[(head + static_cast<size_t>(i)) % scopeSize].store(main.getSample(0, i),
+                                                                    std::memory_order_relaxed);
+    scopeHead.store((head + static_cast<size_t>(count)) % scopeSize, std::memory_order_release);
     actualQuality.store(engine->activeQuality());
     matchReduction.store(engine->matchAttenuation());
     matchReady.store(engine->ready());

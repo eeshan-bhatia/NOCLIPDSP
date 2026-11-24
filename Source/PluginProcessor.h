@@ -68,8 +68,10 @@ class NoclipProcessor final : public juce::AudioProcessor, private juce::Thread
     }
     std::atomic<float> matchReduction{0};
     std::atomic<bool> matchReady{false}, comparing{false};
-    // GUI samples actual input/output, not a transfer animation.
-    std::array<std::atomic<float>, 256> scopeIn{}, scopeOut{};
+    // Rolling GUI history. Atomic samples allow an approximate, non-blocking view.
+    static constexpr size_t scopeSize = 2048;
+    std::array<std::atomic<float>, scopeSize> scopeIn{}, scopeOut{};
+    std::atomic<size_t> scopeHead{0};
 
   private:
     void processAudio(juce::AudioBuffer<float> &, juce::MidiBuffer &, bool hostBypass);

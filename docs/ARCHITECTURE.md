@@ -30,3 +30,8 @@ Tabs reattach controls to independent parameters without writing them. ON switch
 control processing. Navigation is local and excluded from audio state. Schema 6
 stores both complete configurations. Legacy IDs remain for validation/migration.
 The compact editor uses a clip-transfer preview and editable custom curve.
+
+The 808 visualizer reads a 2048-sample rolling atomic input/output history and a
+published write position. Large blocks retain their latest 2048 samples. The GUI
+may read across a concurrent write, so traces are explicitly approximate. No audio
+samples are altered by the monitor; no callback locks or allocations are added.

@@ -142,10 +142,13 @@ void NoclipEditor::resized()
     match.setBounds(340, 184, 154, 26);
     status.setBounds(510, 184, w - 534, 26);
     const int cw = (w - 48) / 6;
-    for (int i = 0; i < 6; ++i)
+    constexpr std::array<size_t, 6> order{3, 0, 1, 2, 4, 5};
+    for (size_t position = 0; position < order.size(); ++position)
     {
-        labels[i].setBounds(24 + i * cw, 225, cw, 22);
-        knobs[i].setBounds(24 + i * cw, 247, cw, 124);
+        const auto index = order[position];
+        const int x = 24 + static_cast<int>(position) * cw;
+        labels[index].setBounds(x, 225, cw, 22);
+        knobs[index].setBounds(x, 247, cw, 124);
     }
     workspace.setBounds(24, 390, w - 48, getHeight() - 470);
 }

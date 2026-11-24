@@ -175,6 +175,56 @@ int comparisonTests()
         juce::PNGImageFormat png;
         png.writeImageToStream(returned, *out);
     }
+    // Rolling scope retains history across small and oversized host buffers.
+    q->setParameter("bypass", 1);
+    q->setParameter("abMatch", 0);
+    q->prepareToPlay(48000, 5000);
+    juce::AudioBuffer<float> scopeAudio(2, 5000);
+    juce::MidiBuffer scopeMidi;
+    for (int i = 0; i < 5000; ++i)
+        for (int ch = 0; ch < 2; ++ch)
+            scopeAudio.setSample(ch, i, .3f * std::sin(static_cast<float>(i) * .014f));
+    q->processBlock(scopeAudio, scopeMidi);
+    const size_t scopeHead = q->scopeHead.load();
+    for (size_t i = 0; i < NoclipProcessor::scopeSize; ++i)
+    {
+        const int source = 5000 - static_cast<int>(NoclipProcessor::scopeSize) + static_cast<int>(i);
+        const size_t index = (scopeHead + i) % NoclipProcessor::scopeSize;
+        check(std::abs(q->scopeIn[index].load() - .3f * std::sin(static_cast<float>(source) * .014f)) < 1e-6f,
+              "scope input history survives ring wrap");
+        check(q->scopeOut[index].load() == scopeAudio.getSample(0, source),
+              "scope output is actual processed audio");
+    }
+    q->setParameter("bypass", 0);
+    q->setParameter("masterEnabled", 0);
+    q->setParameter("bassEnabled", 1);
+    q->setParameter("bassDrive", 18);
+    q->setParameter("harmonics", .7f);
+    q->setParameter("outputDb", -3);
+    q->prepareToPlay(48000, 256);
+    scopeAudio.setSize(2, 256);
+    for (int block = 0; block < 100; ++block)
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            const float t = static_cast<float>(block * 256 + i) / 48000;
+            const float x = .45f * std::sin(t * 2 * std::numbers::pi_v<float> * 55);
+            scopeAudio.setSample(0, i, x);
+            scopeAudio.setSample(1, i, x);
+        }
+        q->processBlock(scopeAudio, scopeMidi);
+    }
+    editor->selectPage(4);
+    auto scopeImage = editor->createComponentSnapshot(editor->getLocalBounds());
+    auto scopeFile =
+        juce::File::getCurrentWorkingDirectory().getChildFile("workspace-808-live.png").createOutputStream();
+    if (scopeFile)
+    {
+        scopeFile->setPosition(0);
+        scopeFile->truncate();
+        juce::PNGImageFormat png;
+        png.writeImageToStream(scopeImage, *scopeFile);
+    }
     // Independent stages: low distortion should alter bass while high processing changes highs.
     noclip::Parameters params;
     params.clipEnabled = true;

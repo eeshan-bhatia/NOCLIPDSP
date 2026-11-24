@@ -52,6 +52,7 @@ class WorkspacePanel final : public juce::Component
     juce::TextButton invert{"INVERT"}, copy{"COPY"};
     std::unique_ptr<ButtonAttachment> clipAttachment, shapeAttachment, symmetryAttachment;
     std::unique_ptr<ComboAttachment> familyAttachment, slotAttachment;
+    void drawBassScope(juce::Graphics &);
     void curvePreset(int);
     void place(int, juce::Rectangle<int>);
 };

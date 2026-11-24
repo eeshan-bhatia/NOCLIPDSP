@@ -1,5 +1,8 @@
 # Current release: 0.6.0
 
+Global Mix moved to the far-left top-row position. A blue input/output signal
+monitor now sits beside the six 808 knobs, using actual rolling plugin audio.
+
 808 simplification: tab renamed to 808, factory preset menu and preset-loading
 code removed, and its six knobs centered in the available panel.
 

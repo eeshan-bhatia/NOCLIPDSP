@@ -63,3 +63,15 @@ Numeric formatting uses Unicode minus with a standard fallback glyph, and accept
 both Unicode minus and ASCII hyphen during editing. All normal text remains in
 Counter-Strike. Text sizes/horizontal scaling account for the unusually wide font.
 Explicit slider text-box colours enforce dark text on a light tan field.
+
+
+Global Mix is the leftmost top-row knob, followed by Input, Output, Ceiling and
+the two crossover controls. Reordering does not change parameter IDs or values.
+
+The 808 page includes a blue phosphor-style signal monitor beside its six knobs.
+Dim input and glowing output traces use 2048 samples of rolling plugin audio
+history (left channel), with a 1024-sample displayed window. A rising zero crossing
+steadies bass waveforms. Input is offset by the reported fixed latency for visual
+comparison. This is approximate whole-plugin signal visualization, not an isolated
+sub trace, spectrum, phase meter or sample-accurate measurement. Atomic samples
+avoid locks and allocation on the audio thread; drawing stays on the GUI thread.

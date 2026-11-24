@@ -222,8 +222,9 @@ void WorkspacePanel::resized()
     const int w = getWidth(), h = getHeight();
     if (page == 4)
     {
-        const int cw = std::min(220, w / 3), ch = std::min(190, (h - 16) / 2), left = (w - 3 * cw) / 2;
-        const int top = (h - 2 * ch) / 2;
+        const int knobArea = w * 60 / 100;
+        const int cw = std::min(200, (knobArea - 12) / 3), ch = std::min(190, (h - 16) / 2);
+        const int left = (knobArea - 3 * cw) / 2, top = (h - 2 * ch) / 2;
         for (int i = 0; i < 6; ++i)
             place(i + 8, {left + i % 3 * cw, top + i / 3 * ch, cw, ch});
         return;
@@ -265,7 +266,10 @@ void WorkspacePanel::paint(juce::Graphics &g)
     auto &look = static_cast<noclip::ui::TacticalLookAndFeel &>(getLookAndFeel());
     look.bevel(g, getLocalBounds().toFloat(), true);
     if (page >= 4)
+    {
+        drawBassScope(g);
         return;
+    }
     const int left = getWidth() * 45 / 100;
     g.setColour(look.edge);
     g.drawVerticalLine(left + 8, 4.f, static_cast<float>(getHeight() - 4));
@@ -296,4 +300,98 @@ void WorkspacePanel::paint(juce::Graphics &g)
     g.strokePath(path, juce::PathStrokeType(8));
     g.setColour(look.amber);
     g.strokePath(path, juce::PathStrokeType(2));
+}
+
+void WorkspacePanel::drawBassScope(juce::Graphics &g)
+{
+    auto &look = static_cast<noclip::ui::TacticalLookAndFeel &>(getLookAndFeel());
+    const int left = getWidth() * 60 / 100 + 12;
+    auto panel =
+        juce::Rectangle<float>(static_cast<float>(left), 18.f, static_cast<float>(getWidth() - left - 18),
+                               static_cast<float>(getHeight() - 36));
+    g.setColour(look.recess);
+    g.fillRect(panel);
+    look.bevel(g, panel, true);
+    g.setColour(look.ink);
+    g.setFont(look.font(14));
+    g.drawText("SIGNAL MONITOR", panel.toNearestInt().withHeight(32), juce::Justification::centred);
+    auto graph = panel.reduced(12, 0).withTrimmedTop(48).withTrimmedBottom(52);
+    for (int i = 0; i <= 8; ++i)
+    {
+        g.setColour(look.glow.withAlpha(i == 4 ? .18f : .07f));
+        const float x = graph.getX() + graph.getWidth() * static_cast<float>(i) / 8;
+        g.drawVerticalLine(static_cast<int>(x), graph.getY(), graph.getBottom());
+    }
+    for (int i = 0; i <= 4; ++i)
+    {
+        g.setColour(look.glow.withAlpha(i == 2 ? .25f : .09f));
+        const float y = graph.getY() + graph.getHeight() * static_cast<float>(i) / 4;
+        g.drawHorizontalLine(static_cast<int>(y), graph.getX(), graph.getRight());
+    }
+    constexpr size_t length = NoclipProcessor::scopeSize, visible = 1024;
+    const size_t head = processor.scopeHead.load(std::memory_order_acquire);
+    // A rising zero crossing steadies sustained bass. This is a visual hint,
+    // not a triggered measurement or an isolated sub-frequency trace.
+    size_t start = 128;
+    for (size_t i = 128; i < length - visible; ++i)
+    {
+        const float previous = processor.scopeOut[(head + i - 1) % length].load(std::memory_order_relaxed),
+                    next = processor.scopeOut[(head + i) % length].load(std::memory_order_relaxed);
+        if (previous <= 0 && next > 0)
+        {
+            start = i;
+            break;
+        }
+    }
+    const size_t delay = static_cast<size_t>(std::clamp(processor.getLatencySamples(), 0, 127));
+    g.setFont(look.font(11));
+    g.setColour(look.sand.brighter(.3f));
+    g.drawText("IN",
+               panel.toNearestInt()
+                   .withY(static_cast<int>(panel.getBottom() - 45))
+                   .withHeight(20)
+                   .withTrimmedRight(static_cast<int>(panel.getWidth() / 2)),
+               juce::Justification::centred);
+    g.setColour(look.glow);
+    g.drawText("OUT",
+               panel.toNearestInt()
+                   .withY(static_cast<int>(panel.getBottom() - 45))
+                   .withHeight(20)
+                   .withTrimmedLeft(static_cast<int>(panel.getWidth() / 2)),
+               juce::Justification::centred);
+    g.setColour(look.ink.withAlpha(.7f));
+    g.setFont(look.font(10));
+    g.drawText("PLUGIN SIGNAL / LEFT",
+               panel.toNearestInt().withY(static_cast<int>(panel.getBottom() - 24)).withHeight(20),
+               juce::Justification::centred);
+    juce::Graphics::ScopedSaveState saved(g);
+    g.reduceClipRegion(graph.toNearestInt());
+    for (int trace = 0; trace < 2; ++trace)
+    {
+        juce::Path path;
+        for (size_t i = 0; i < visible; i += 2)
+        {
+            const size_t index = (head + start + i + length - (trace == 0 ? delay : 0)) % length;
+            float value = (trace == 0 ? processor.scopeIn[index] : processor.scopeOut[index])
+                              .load(std::memory_order_relaxed);
+            if (!std::isfinite(value))
+                value = 0;
+            const float x = graph.getX() +
+                            graph.getWidth() * static_cast<float>(i) / static_cast<float>(visible - 2),
+                        y = graph.getCentreY() - std::clamp(value, -1.f, 1.f) * graph.getHeight() * .44f;
+            if (i == 0)
+                path.startNewSubPath(x, y);
+            else
+                path.lineTo(x, y);
+        }
+        if (trace == 1)
+        {
+            g.setColour(look.glow.withAlpha(.06f));
+            g.strokePath(path, juce::PathStrokeType(15));
+            g.setColour(look.glow.withAlpha(.16f));
+            g.strokePath(path, juce::PathStrokeType(7));
+        }
+        g.setColour(trace == 0 ? look.sand.brighter(.3f).withAlpha(.6f) : look.glow);
+        g.strokePath(path, juce::PathStrokeType(trace == 0 ? 1.f : 2.f));
+    }
 }
