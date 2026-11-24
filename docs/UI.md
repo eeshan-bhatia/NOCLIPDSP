@@ -97,4 +97,4 @@ the section's configured sound even when its ON switch is off. Global gains,
 global mix/ceiling, crossover phase and DC filtering are intentionally excluded.
 The clip graph adds dashed horizontal threshold references and vertical input
 references at threshold/drive; soft curves do not necessarily begin bending there.
-The subtitle reads: 3 BAND WAVESHAPER WITH 808 SATURATION.
+The subtitle reads: 3 BAND WAVESHAPER WITH 808 FX.
