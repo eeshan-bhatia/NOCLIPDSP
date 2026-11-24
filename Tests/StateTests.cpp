@@ -108,6 +108,26 @@ int main()
     restored.getStateInformation(after);
     if (before != after) return 10;
 
+    // Exercise numeric parsing in an otherwise valid schema, so rejection
+    // cannot pass merely because unrelated parameter IDs are invalid.
+    for (const char* malformed : { "", "garbage", " 1", "1 ", "+1", "1junk",
+                                  "1,5", "0x1", "nan", "inf", "1e999", "1e" })
+    {
+        auto numeric = legacy.createCopy();
+        numeric.getChild(0).setProperty("value", malformed, nullptr);
+        xml = numeric.createXml();
+        juce::AudioProcessor::copyXmlToBinary(*xml, bytes);
+        restored.setStateInformation(bytes.getData(), static_cast<int>(bytes.getSize()));
+        restored.getStateInformation(after);
+        if (before != after) { std::cerr << "Accepted malformed number: " << malformed << '\n'; return 15; }
+    }
+    auto numeric = legacy.createCopy();
+    numeric.getChild(0).setProperty("value", "-1.25e1", nullptr);
+    xml = numeric.createXml();
+    juce::AudioProcessor::copyXmlToBinary(*xml, bytes);
+    restored.setStateInformation(bytes.getData(), static_cast<int>(bytes.getSize()));
+    if (restored.state.getRawParameterValue(noclip::parameters::input)->load() != -12.5f) return 16;
+
     set(original, noclip::parameters::output, 24.0f);
     original.getStateInformation(bytes);
     restored.setStateInformation(bytes.getData(), static_cast<int>(bytes.getSize()));

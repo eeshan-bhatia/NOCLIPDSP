@@ -1,7 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <cmath>
-#include <charconv>
+#include <locale>
+#include <sstream>
 
 static_assert(std::atomic<float>::is_always_lock_free);
 NoclipProcessor::NoclipProcessor()
@@ -372,8 +373,14 @@ void NoclipProcessor::setStateInformation(const void *data, int size)
                         return false;
                     auto text = child.getProperty("value").toString().toStdString();
                     float v = 0;
-                    auto parsed = std::from_chars(text.data(), text.data() + text.size(), v);
-                    if (parsed.ec != std::errc() || parsed.ptr != text.data() + text.size() ||
+                    // State loading is outside the audio callback. Classic locale
+                    // keeps decimal parsing portable, including Apple's libc++.
+                    std::istringstream parsed(text);
+                    parsed.imbue(std::locale::classic());
+                    parsed >> std::noskipws >> v;
+                    if (text.empty() || text.front() == '+' ||
+                        text.find_first_not_of("0123456789.eE+-") != std::string::npos ||
+                        parsed.fail() || !parsed.eof() ||
                         !std::isfinite(v))
                         return false;
                     auto *parameter = state.getParameter(id);
