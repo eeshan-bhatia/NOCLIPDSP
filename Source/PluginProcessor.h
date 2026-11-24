@@ -60,7 +60,6 @@ class NoclipProcessor final : public juce::AudioProcessor, private juce::Thread
     noclip::Parameters readParameters() const noexcept;
     noclip::CurveTable readCurveTable(int stage = 0) const noexcept;
     void setParameter(const char *id, float value);
-    void loadBassPreset(int index);
     void selectSnapshot(int);
     void copySnapshot(int from, int to);
     int selectedSnapshot() const noexcept

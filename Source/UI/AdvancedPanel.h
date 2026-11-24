@@ -48,7 +48,7 @@ class WorkspacePanel final : public juce::Component
     };
     std::array<Control, 14> controls;
     juce::ToggleButton clip{"CLIP"}, shape{"SHAPE"}, symmetry{"SYMMETRY"};
-    juce::ComboBox family, slot, preset, bassPreset;
+    juce::ComboBox family, slot, preset;
     juce::TextButton invert{"INVERT"}, copy{"COPY"};
     std::unique_ptr<ButtonAttachment> clipAttachment, shapeAttachment, symmetryAttachment;
     std::unique_ptr<ComboAttachment> familyAttachment, slotAttachment;

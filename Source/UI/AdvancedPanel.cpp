@@ -99,8 +99,8 @@ WorkspacePanel::WorkspacePanel(NoclipProcessor &p) : processor(p), editor(p)
         addAndMakeVisible(c.knob);
         addAndMakeVisible(c.label);
     }
-    for (auto *c : std::array<juce::Component *, 10>{&editor, &clip, &shape, &symmetry, &family, &slot,
-                                                     &preset, &bassPreset, &invert, &copy})
+    for (auto *c : std::array<juce::Component *, 9>{&editor, &clip, &shape, &symmetry, &family, &slot,
+                                                    &preset, &invert, &copy})
     {
         c->setName("compact");
         addAndMakeVisible(c);
@@ -109,8 +109,6 @@ WorkspacePanel::WorkspacePanel(NoclipProcessor &p) : processor(p), editor(p)
     slot.addItemList({"CURVE 1", "CURVE 2"}, 1);
     preset.addItemList({"LINEAR", "SOFT", "HARD", "FOLD"}, 1);
     preset.setTextWhenNothingSelected("PRESET");
-    bassPreset.addItemList({"808 DESTROY", "SUB CONTROL", "HARMONIC BOOST", "CLEAN 808", "DIGITAL BASS"}, 1);
-    bassPreset.setTextWhenNothingSelected("808 PRESETS");
     symmetryAttachment = std::make_unique<ButtonAttachment>(p.state, "symmetry", symmetry);
     slotAttachment = std::make_unique<ComboAttachment>(p.state, "editSlot", slot);
     preset.onChange = [this]
@@ -118,12 +116,6 @@ WorkspacePanel::WorkspacePanel(NoclipProcessor &p) : processor(p), editor(p)
         if (preset.getSelectedId() > 0)
             curvePreset(preset.getSelectedItemIndex());
         preset.setSelectedId(0, juce::dontSendNotification);
-    };
-    bassPreset.onChange = [this]
-    {
-        if (bassPreset.getSelectedId() > 0)
-            processor.loadBassPreset(bassPreset.getSelectedItemIndex());
-        bassPreset.setSelectedId(0, juce::dontSendNotification);
     };
     invert.onClick = [this]
     {
@@ -159,7 +151,6 @@ void WorkspacePanel::setPage(int next)
     for (auto *c : std::array<juce::Component *, 9>{&editor, &clip, &shape, &symmetry, &family, &slot,
                                                     &preset, &invert, &copy})
         c->setVisible(page < 4);
-    bassPreset.setVisible(page == 4);
     clipAttachment.reset();
     shapeAttachment.reset();
     familyAttachment.reset();
@@ -231,10 +222,10 @@ void WorkspacePanel::resized()
     const int w = getWidth(), h = getHeight();
     if (page == 4)
     {
-        bassPreset.setBounds(10, 8, 280, 28);
-        const int cw = std::min(220, w / 3), ch = std::min(190, (h - 44) / 2), left = (w - 3 * cw) / 2;
+        const int cw = std::min(220, w / 3), ch = std::min(190, (h - 16) / 2), left = (w - 3 * cw) / 2;
+        const int top = (h - 2 * ch) / 2;
         for (int i = 0; i < 6; ++i)
-            place(i + 8, {left + i % 3 * cw, 44 + i / 3 * ch, cw, ch});
+            place(i + 8, {left + i % 3 * cw, top + i / 3 * ch, cw, ch});
         return;
     }
     const int left = w * 45 / 100, right = w - left - 18;

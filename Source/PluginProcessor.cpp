@@ -509,19 +509,6 @@ void NoclipProcessor::setParameter(const char *id, float value)
         parameter->endChangeGesture();
     }
 }
-void NoclipProcessor::loadBassPreset(int index)
-{
-    setParameter("bassEnabled", 1);
-    constexpr float settings[5][6]{{.75f, 1, 24, .1f, 100, -6},
-                                   {1, .15f, 6, .5f, 140, -2},
-                                   {1, 1, 16, .25f, 120, -3},
-                                   {1, 0, 0, 0, 120, 0},
-                                   {.4f, 1, 30, 0, 90, -8}};
-    constexpr const char *names[]{"subPreserve", "harmonics", "bassDrive", "punch", "splitHz", "bassOutput"};
-    index = std::clamp(index, 0, 4);
-    for (int i = 0; i < 6; ++i)
-        setParameter(names[i], settings[index][i]);
-}
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 {
     return new NoclipProcessor();

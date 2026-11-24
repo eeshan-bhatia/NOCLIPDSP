@@ -5,7 +5,7 @@ A C++20/JUCE clipper and waveshaper for masters, aggressive drums and 808s.
 
 ## Five independent sections
 
-MASTER, LOW, MID, HIGH and 808 ENGINE. Tabs only change the view. Each section
+MASTER, LOW, MID, HIGH and 808. Tabs only change the view. Each section
 has its own ON switch, and multiple sections can run together.
 
 Signal order: input -> LOW/MID/HIGH in parallel -> MASTER -> 808 -> wet DC filter

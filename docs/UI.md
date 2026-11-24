@@ -23,7 +23,7 @@ The title is dark text with a green shadow glow. The graph uses layered
 translucent vector strokes around its orange trace. Knob arcs have restrained
 green highlights; readouts remain high contrast. No game artwork/logos are used.
 
-Version 0.6.0 has five view-only tabs: MASTER, LOW, MID, HIGH and 808 ENGINE.
+Version 0.6.0 has five view-only tabs: MASTER, LOW, MID, HIGH and 808.
 Each has a separate ON switch. Shared gains, ceiling/mix and crossovers remain
 visible. Four shaper views combine analytical CLIP left and editable SHAPE right.
 808 retains a compact six-knob view. All continuous controls use rotary knobs.

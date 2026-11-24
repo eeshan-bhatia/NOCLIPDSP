@@ -25,7 +25,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
     layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"mode", 1}, "Nonlinear mode",
                                                             juce::StringArray{"CLIP", "SHAPE"}, 0));
     layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"routing", 1}, "Routing",
-                                                            juce::StringArray{"FULL BAND", "808 ENGINE"}, 0));
+                                                            juce::StringArray{"FULL BAND", "808"}, 0));
     layout.add(std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{"quality", 1}, "Oversampling",
         juce::StringArray{"1X CREATIVE", "2X ECO", "4X NORMAL", "8X HIGH"}, 2));

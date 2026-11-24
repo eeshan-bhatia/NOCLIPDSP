@@ -2,7 +2,7 @@
 
 ## Navigation and activation
 
-Exactly five tabs: MASTER, LOW, MID, HIGH, 808 ENGINE. Selecting a tab changes
+Exactly five tabs: MASTER, LOW, MID, HIGH, 808. Selecting a tab changes
 only the view and palette. It never enables, disables or resets processing.
 Use each ON switch to activate its section. Multiple sections can run together.
 New instances start with MASTER on, its CLIP on, custom SHAPE off, bands/808 off.
@@ -36,8 +36,8 @@ this is not a true-peak limiter.
 The original six tools remain: Sub Preserve, Harmonics, Drive, Punch, Split and
 Output. The isolated engine uses the original adjustable-knee clipping response.
 Its clean-sub/dirty-harmonics split remains separate from the three-band shapers.
-Presets change these six values and enable 808, without resetting other sections,
-global gains, quality or A/B. Blue styling follows the viewed tab, not whether
+808 has no factory preset menu; adjust its six knobs directly.
+Blue styling follows the viewed tab, not whether
 808 is processing. Viewing another tab leaves 808 running if its ON switch is on.
 
 ## Recall and migration

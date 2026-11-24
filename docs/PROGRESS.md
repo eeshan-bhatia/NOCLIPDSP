@@ -1,5 +1,8 @@
 # Current release: 0.6.0
 
+808 simplification: tab renamed to 808, factory preset menu and preset-loading
+code removed, and its six knobs centered in the available panel.
+
 Five view-only tabs, independent section enables, parallel band shapers followed
 by MASTER and 808, combined CLIP/SHAPE editors, and independent curves are
 implemented. External sidechain is removed. Whole-plugin A/B, RMS matching,

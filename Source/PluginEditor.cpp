@@ -6,7 +6,7 @@ NoclipEditor::NoclipEditor(NoclipProcessor &p) : AudioProcessorEditor(p), proces
     icon = juce::ImageCache::getFromMemory(NoclipArtwork::icon_png, NoclipArtwork::icon_pngSize);
     texture = juce::Image(juce::Image::RGB, 256, 256, false);
     addAndMakeVisible(workspace);
-    const char *names[]{"MASTER", "LOW", "MID", "HIGH", "808 ENGINE"};
+    const char *names[]{"MASTER", "LOW", "MID", "HIGH", "808"};
     for (size_t i = 0; i < 5; ++i)
     {
         tabs[i].setButtonText(names[i]);
