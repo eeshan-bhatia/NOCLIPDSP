@@ -3,6 +3,18 @@
 A C++20/JUCE clipper and waveshaper for masters, aggressive drums and 808s.
 **0.6.0 is a development build.** Windows VST3 and standalone; AGPLv3.
 
+## Download and install
+
+Download the **Windows-x64-VST3.zip** asset from
+[GitHub Releases](https://github.com/eeshan-bhatia/NOCLIPDSP/releases).
+Users do not need this repository or the source archive.
+
+Close your DAW, extract the ZIP, and copy the entire `noclip.DSP.vst3` folder to
+`C:\Program Files\Common Files\VST3\`. Reopen the DAW and rescan plugins.
+Replace the old bundle when updating; do not copy only the binary inside it.
+The ZIP includes installation instructions and a runtime download link if needed.
+Requires Windows 10/11 x64 and a 64-bit VST3 host.
+
 ## Five independent sections
 
 MASTER, LOW, MID, HIGH and 808 can be enabled independently,

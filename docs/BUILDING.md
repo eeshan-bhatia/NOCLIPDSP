@@ -70,3 +70,20 @@ The CMake project and plugin target are named noclip.DSP. Native Windows outputs
 
 The workspace directory can retain its existing name. The internal NOCLIPDSP_STATE
 identifier remains unchanged for compatibility with saved host projects.
+
+## Release packages
+
+After building and validating Release, commit the source and run:
+
+```powershell
+python scripts/Package-Release.py --build build-native --output build-release
+```
+
+The script requires clean project and pinned JUCE checkouts. It produces a
+Windows x64 VST3 ZIP, a separate corresponding-source ZIP including the pinned
+JUCE checkout and release inputs, and SHA-256 checksums. Confirm redistribution
+permission for all external inputs before publishing. Upload all three assets
+to the release matching the packaged version and source commit.
+
+Only the VST3 ZIP is needed to install the plugin. Keep the source archive
+available alongside it. Build outputs and release archives remain ignored.
