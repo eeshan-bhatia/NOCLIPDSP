@@ -52,12 +52,26 @@ inline constexpr std::array<FloatSpec, 17> legacyBandFloats {{
     { "highGain", "High gain", "dB", -24, 12, 0 }, { "highMix", "High mix", "", 0, 1, 1 }, { "highOn", "High enabled", "", 0, 1, 1 },
 }};
 inline constexpr std::array<const char*, 6> options { "mode", "routing", "quality", "dcFilter", "symmetry", "editSlot" };
-inline juce::StringArray allIds()
+inline constexpr std::array<FloatSpec,4> sidechainFloats {{
+    { "scSensitivity", "SC sensitivity", "dBFS", -60, 0, -24 },
+    { "scAmount", "SC drive relief", "dB", 0, 24, 6 },
+    { "scAttack", "SC attack", "ms", .1f, 100, 5 },
+    { "scRelease", "SC release", "ms", 10, 1000, 150 }
+}};
+inline constexpr size_t snapshotCount=49;
+inline juce::StringArray legacyIds()
 {
     juce::StringArray result;
     for(auto id:ids) result.add(id);
     for(auto spec:extraFloats) result.add(spec.id);
     for(auto id:options) result.add(id);
+    return result;
+}
+inline juce::StringArray allIds()
+{
+    auto result=legacyIds();
+    for(auto spec:sidechainFloats) result.add(spec.id);
+    result.add("scEnabled"); result.add("abMatch");
     return result;
 }
 juce::AudioProcessorValueTreeState::ParameterLayout createLayout();

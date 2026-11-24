@@ -3,6 +3,7 @@
 #include <cstddef>
 #include "Clipper.h"
 #include "AdvancedDSP.h"
+#include "Sidechain.h"
 
 namespace noclip
 {
@@ -31,6 +32,7 @@ struct Parameters
     float ceilingDb = 0.0f, mix = 1.0f;
     int curve = static_cast<int>(Curve::knee);
     AdvancedParameters advanced;
+    SidechainParameters sidechain;
 };
 
 struct MeterFrame
@@ -46,7 +48,8 @@ public:
     void prepare(double sampleRate, Parameters initial = {}) noexcept;
     void setParameters(Parameters parameters) noexcept;
     void setTable(const CurveTable& table, bool immediate = false) noexcept { advanced.setTable(table, immediate); }
-    MeterFrame process(float* const* channels, int channelCount, int samples) noexcept;
+    MeterFrame process(float* const* channels, int channelCount, int samples,
+                       const float* driveRelief=nullptr, int factor=1) noexcept;
 private:
     Ramp input, output, active;
     Ramp enabled, drive, threshold, shape, knee, ceiling, mix;

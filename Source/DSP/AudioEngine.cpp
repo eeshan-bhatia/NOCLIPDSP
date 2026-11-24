@@ -79,7 +79,8 @@ void AudioEngine::setParameters(Parameters p) noexcept
     ceiling.setTarget(dbToGain(p.ceilingDb)); mix.setTarget(p.mix);
     for (int i = 0; i < curveCount; ++i) curves[i].setTarget(i == p.curve ? 1.0f : 0.0f);
 }
-MeterFrame AudioEngine::process(float* const* channels, int channelCount, int samples) noexcept
+MeterFrame AudioEngine::process(float* const* channels, int channelCount, int samples,
+                               const float* driveRelief,int factor) noexcept
 {
     MeterFrame meter;
     double energy = 0, clipped = 0;
@@ -109,7 +110,8 @@ MeterFrame AudioEngine::process(float* const* channels, int channelCount, int sa
             double wet = linear;
             if (clipBlend > 0 && blend > 0)
             {
-                const auto paths = advanced.process(ch, dry, d, t, s, k, weights, weightSum);
+                const float relief=driveRelief?driveRelief[i/std::max(1,factor)]:1;
+                const auto paths = advanced.process(ch, dry, d, t, s, k, weights, weightSum,relief);
                 const double mixed = (m == 1 ? paths[1] : (m == 0 ? paths[0] : paths[0] * (1 - m) + m * paths[1])) * outGain;
                 const double limited = std::clamp(mixed, -static_cast<double>(c), static_cast<double>(c));
                 // Activity measures frames above threshold or ceiling, not gain reduction.

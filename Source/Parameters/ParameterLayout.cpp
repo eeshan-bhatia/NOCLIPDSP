@@ -25,6 +25,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"dcFilter",1},"DC filter",true));
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"symmetry",1},"Symmetry lock",true));
     layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"editSlot",1},"Edit curve",juce::StringArray{"A","B"},0));
+    for(const auto& spec:sidechainFloats)
+        layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{spec.id,1},spec.name,
+            juce::NormalisableRange<float>{spec.min,spec.max,.01f},spec.initial,
+            juce::AudioParameterFloatAttributes().withLabel(spec.unit)));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"scEnabled",1},"External sidechain",false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"abMatch",1},"A/B RMS match",false));
     return layout;
 }
 }

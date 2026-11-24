@@ -80,11 +80,12 @@ double AdvancedDSP::transfer(double x, float t, float s, float k,
     return classic*(1-v[custom])+v[custom]*shaped;
 }
 std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t,float s,float k,
-    const std::array<float,curveCount>& weights,float sum) noexcept
+    const std::array<float,curveCount>& weights,float sum,float driveRelief) noexcept
 {
     const auto ch=static_cast<size_t>(channel);
     double wet=0, aligned=0, activity=0;
-    if(v[full]>0) { wet=v[full]*transfer(dry*d,t,s,k,weights,sum); aligned=v[full]*dry; if(std::abs(dry*d)>t) activity=v[full]; }
+    const double relievedDrive=std::max(1.0,static_cast<double>(d)*driveRelief);
+    if(v[full]>0) { wet=v[full]*transfer(dry*relievedDrive,t,s,k,weights,sum); aligned=v[full]*dry; if(std::abs(dry*relievedDrive)>t) activity=v[full]; }
     if(v[multi]>0)
     {
         const auto parts=crossovers[ch].process(dry,v[lowG],v[highG]);
@@ -92,10 +93,11 @@ std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t
         for(size_t i=0;i<3;++i)
         {
             const auto& b=bandValues[i];
-            const double shaped= b[4]>0 ? transfer(parts[i]*d*b[0],t,b[1],k,weights,sum) : parts[i];
+            const double bandDrive=std::max(1.0,static_cast<double>(d)*b[0]*driveRelief);
+            const double shaped= b[4]>0 ? transfer(parts[i]*bandDrive,t,b[1],k,weights,sum) : parts[i];
             const double mixed=(parts[i]*(1-b[3])+shaped*b[3])*b[2];
             processed+=parts[i]*(1-b[4])+mixed*b[4];
-            if(std::abs(parts[i]*d*b[0])>t) activity=std::max(activity,static_cast<double>(v[multi]*b[4]));
+            if(std::abs(parts[i]*bandDrive)>t) activity=std::max(activity,static_cast<double>(v[multi]*b[4]));
         }
         wet+=v[multi]*processed; aligned+=v[multi]*(parts[0]+parts[1]+parts[2]);
     }
@@ -104,11 +106,12 @@ std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t
         const double attack=std::clamp((fast[0]-slow[0])/(fast[0]+1e-9),0.0,1.0);
         const double bassGain=1+(v[bassDrive]-1)*(1-v[punch]*attack);
         const auto clean=bassClean[ch].process(dry,v[splitG]);
-        const auto dirty=bassDirty[ch].process(transfer(dry*d*bassGain,t,s,k,weights,sum),v[splitG]);
+        const double dirtyDrive=std::max(1.0,static_cast<double>(d)*bassGain*driveRelief);
+        const auto dirty=bassDirty[ch].process(transfer(dry*dirtyDrive,t,s,k,weights,sum),v[splitG]);
         wet+=v[bass]*v[bassOutput]*(clean[0]*v[sub]+dirty[0]*(1-v[sub])
                                   +clean[1]*(1-v[harmonics])+dirty[1]*v[harmonics]);
         aligned+=v[bass]*(clean[0]+clean[1]);
-        if(std::abs(dry*d*bassGain)>t) activity=std::max(activity,static_cast<double>(v[bass]));
+        if(std::abs(dry*dirtyDrive)>t) activity=std::max(activity,static_cast<double>(v[bass]));
     }
     const double filtered=(1+dcPole)*.5*(wet-dcX[ch])+dcPole*dcY[ch];
     dcX[ch]=wet; dcY[ch]=filtered;

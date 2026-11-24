@@ -6,6 +6,7 @@ void ProcessingChain::prepare(double rate,int channels,Parameters p,int quality,
 {
     if(!std::isfinite(rate)) rate=48000;
     sampleRate=std::clamp(rate,8000.0,192000.0); channels=std::clamp(channels,1,2);
+    detector.prepare(sampleRate); detector.setParameters(p.sidechain);
     latest=curve; latencySamples=0;
     for(size_t q=0;q<banks.size();++q)
     {
@@ -39,12 +40,14 @@ float ProcessingChain::render(Bank& b,int channels,int samples,Parameters p) noe
     auto up=b.oversampler->processSamplesUp(block);
     float* oversampled[] { up.getChannelPointer(0),channels==2?up.getChannelPointer(1):nullptr };
     p.bypass=false; b.engine.setParameters(p);
-    const auto meters=b.engine.process(oversampled,channels,static_cast<int>(up.getNumSamples()));
+    const auto meters=b.engine.process(oversampled,channels,static_cast<int>(up.getNumSamples()),relief.data(),
+        static_cast<int>(b.oversampler->getOversamplingFactor()));
     b.oversampler->processSamplesDown(block);
     for(int i=0;i<samples;++i) b.padding.frame(b.work[0][i],b.work[1][i],b.pad);
     return meters.clippingActivity;
 }
-MeterFrame ProcessingChain::process(float* const* channels,int channelCount,int samples,Parameters p,int quality) noexcept
+MeterFrame ProcessingChain::process(float* const* channels,int channelCount,int samples,Parameters p,int quality,
+                                    const float* const* sidechain,int sideChannels) noexcept
 {
     MeterFrame meters;
     if(samples<=0||channelCount<1||channelCount>2||!banks[0].oversampler) return meters;
@@ -60,10 +63,18 @@ MeterFrame ProcessingChain::process(float* const* channels,int channelCount,int 
     }
     bypassBlend.set(p.bypass?0.0f:1.0f);
     finalCeiling.set(dbToGain(p.ceilingDb)); finalEnabled.set(p.clipEnabled?1.0f:0.0f);
+    detector.setParameters(p.sidechain);
     double energy=0, activity=0;
     for(int offset=0;offset<samples;offset+=chunkSize)
     {
         const int n=std::min(chunkSize,samples-offset);
+        for(int i=0;i<n;++i)
+        {
+            float peak=0;
+            if(sidechain) for(int ch=0;ch<std::clamp(sideChannels,0,2);++ch)
+                if(std::isfinite(sidechain[ch][offset+i])) peak=std::max(peak,std::abs(sidechain[ch][offset+i]));
+            relief[i]=detector.process(peak,sidechain!=nullptr&&sideChannels>0);
+        }
         for(int ch=0;ch<channelCount;++ch) for(int i=0;i<n;++i)
         {
             const float raw=channels[ch][offset+i];
