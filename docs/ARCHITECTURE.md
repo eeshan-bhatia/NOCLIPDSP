@@ -35,3 +35,12 @@ The 808 visualizer reads a 2048-sample rolling atomic input/output history and a
 published write position. Large blocks retain their latest 2048 samples. The GUI
 may read across a concurrent write, so traces are explicitly approximate. No audio
 samples are altered by the monitor; no callback locks or allocations are added.
+
+
+808 monitor update: input/output traces now use separate analysis-only 24 dB/oct
+LR low-pass filters following the 808 Split setting (40-400 Hz), with a smoothed
+cutoff. The title is 808 SIGNAL MONITOR. The right-hand segmented meter measures
+the larger filtered output peak across stereo channels, with 350 ms exponential
+release. Its display spans -60 to 0 dBFS; GODMODE lights at -3 dBFS and above.
+Waveforms remain left-channel previews; the footer shows the cutoff. GODMODE is a
+visual level tier, not a processing mode. Filters never alter audible audio.

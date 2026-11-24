@@ -313,9 +313,9 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
     g.fillRect(panel);
     look.bevel(g, panel, true);
     g.setColour(look.ink);
-    g.setFont(look.font(14));
-    g.drawText("SIGNAL MONITOR", panel.toNearestInt().withHeight(32), juce::Justification::centred);
-    auto graph = panel.reduced(12, 0).withTrimmedTop(48).withTrimmedBottom(52);
+    g.setFont(look.font(12));
+    g.drawText("808 SIGNAL MONITOR", panel.toNearestInt().withHeight(32), juce::Justification::centred);
+    auto graph = panel.reduced(12, 0).withTrimmedTop(48).withTrimmedBottom(52).withTrimmedRight(78);
     for (int i = 0; i <= 8; ++i)
     {
         g.setColour(look.glow.withAlpha(i == 4 ? .18f : .07f));
@@ -331,7 +331,7 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
     constexpr size_t length = NoclipProcessor::scopeSize, visible = 1024;
     const size_t head = processor.scopeHead.load(std::memory_order_acquire);
     // A rising zero crossing steadies sustained bass. This is a visual hint,
-    // not a triggered measurement or an isolated sub-frequency trace.
+    // not a sample-accurate triggered measurement.
     size_t start = 128;
     for (size_t i = 128; i < length - visible; ++i)
     {
@@ -361,9 +361,45 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
                juce::Justification::centred);
     g.setColour(look.ink.withAlpha(.7f));
     g.setFont(look.font(10));
-    g.drawText("PLUGIN SIGNAL / LEFT",
+    g.drawText("LOW END / " + juce::String(static_cast<int>(processor.readParameters().advanced.splitHz)) +
+                   " Hz",
                panel.toNearestInt().withY(static_cast<int>(panel.getBottom() - 24)).withHeight(20),
                juce::Justification::centred);
+    const float level = processor.lowEndPeak.load(std::memory_order_relaxed);
+    const float db = 20 * std::log10(std::max(1e-6f, level));
+    const float normal = std::clamp((db + 60) / 60, 0.f, 1.f);
+    const float meterX = graph.getRight() + 18, meterW = 18, meterTop = graph.getY() + 24,
+                meterHeight = graph.getHeight() - 26;
+    const bool godmode = db >= -3;
+    g.setFont(look.font(10));
+    g.setColour(godmode ? look.glow : look.ink.withAlpha(.45f));
+    g.drawText("GODMODE", static_cast<int>(graph.getRight() + 3), static_cast<int>(graph.getY()), 76, 20,
+               juce::Justification::centred);
+    for (int i = 0; i < 20; ++i)
+    {
+        const float segmentH = meterHeight / 20;
+        auto segment =
+            juce::Rectangle<float>(meterX, meterTop + meterHeight - (i + 1) * segmentH, meterW, segmentH - 2);
+        const bool lit = normal > static_cast<float>(i) / 20;
+        if (lit)
+        {
+            g.setColour(look.glow.withAlpha(.13f));
+            g.fillRect(segment.expanded(3));
+        }
+        g.setColour(lit ? look.glow.withAlpha(.45f + .55f * static_cast<float>(i) / 19)
+                        : look.sand.withAlpha(.12f));
+        g.fillRect(segment);
+    }
+    g.setColour(look.ink.withAlpha(.65f));
+    g.setFont(look.font(10));
+    for (int tick = 0; tick < 4; ++tick)
+    {
+        const int value = -tick * 20;
+        const float y = meterTop + meterHeight * static_cast<float>(tick) / 3;
+        g.drawText(juce::String(value).replaceCharacter('-', juce::juce_wchar(0x2212)),
+                   static_cast<int>(meterX + 23), static_cast<int>(y - 8), 32, 16,
+                   juce::Justification::centredLeft);
+    }
     juce::Graphics::ScopedSaveState saved(g);
     g.reduceClipRegion(graph.toNearestInt());
     for (int trace = 0; trace < 2; ++trace)

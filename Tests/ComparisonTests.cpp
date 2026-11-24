@@ -186,15 +186,48 @@ int comparisonTests()
             scopeAudio.setSample(ch, i, .3f * std::sin(static_cast<float>(i) * .014f));
     q->processBlock(scopeAudio, scopeMidi);
     const size_t scopeHead = q->scopeHead.load();
-    for (size_t i = 0; i < NoclipProcessor::scopeSize; ++i)
+    noclip::LowEndMonitor referenceMonitor;
+    referenceMonitor.prepare(48000, q->readParameters().advanced.splitHz);
+    for (int source = 0; source < 5000; ++source)
     {
-        const int source = 5000 - static_cast<int>(NoclipProcessor::scopeSize) + static_cast<int>(i);
-        const size_t index = (scopeHead + i) % NoclipProcessor::scopeSize;
-        check(std::abs(q->scopeIn[index].load() - .3f * std::sin(static_cast<float>(source) * .014f)) < 1e-6f,
-              "scope input history survives ring wrap");
-        check(q->scopeOut[index].load() == scopeAudio.getSample(0, source),
-              "scope output is actual processed audio");
+        const float input = referenceMonitor.input(.3f * std::sin(static_cast<float>(source) * .014f));
+        const float output =
+            referenceMonitor.output(scopeAudio.getSample(0, source), scopeAudio.getSample(1, source), 2);
+        if (source < 5000 - static_cast<int>(NoclipProcessor::scopeSize))
+            continue;
+        const size_t index =
+            (scopeHead + static_cast<size_t>(source - 5000 + static_cast<int>(NoclipProcessor::scopeSize))) %
+            NoclipProcessor::scopeSize;
+        check(std::abs(q->scopeIn[index].load() - input) < 1e-6f,
+              "filtered scope history survives ring wrap");
+        check(std::abs(q->scopeOut[index].load() - output) < 1e-6f,
+              "scope output is filtered processed audio");
     }
+    const auto monitorRms = [](float frequency)
+    {
+        noclip::LowEndMonitor monitor;
+        monitor.prepare(48000, 120);
+        double sum = 0;
+        for (int i = 0; i < 48000; ++i)
+        {
+            const float x =
+                .5f * std::sin(static_cast<float>(i) * 2 * std::numbers::pi_v<float> * frequency / 48000);
+            const float y = monitor.output(x, x, 2);
+            if (i >= 24000)
+                sum += y * y;
+        }
+        return std::sqrt(sum / 24000);
+    };
+    check(monitorRms(50) > .3 && monitorRms(2000) < .001,
+          "808 monitor passes sub and rejects upper frequencies");
+    referenceMonitor.prepare(48000, 120);
+    for (int i = 0; i < 48000; ++i)
+        referenceMonitor.output(
+            0, .95f * std::sin(static_cast<float>(i) * 2 * std::numbers::pi_v<float> * 50 / 48000), 2);
+    check(referenceMonitor.peak() > .8f, "low-end meter detects right-channel bass and reaches top tier");
+    for (int i = 0; i < 48000; ++i)
+        referenceMonitor.output(0, 0, 2);
+    check(referenceMonitor.peak() < .1f, "meter releases smoothly into silence");
     q->setParameter("bypass", 0);
     q->setParameter("masterEnabled", 0);
     q->setParameter("bassEnabled", 1);

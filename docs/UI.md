@@ -69,9 +69,18 @@ Global Mix is the leftmost top-row knob, followed by Input, Output, Ceiling and
 the two crossover controls. Reordering does not change parameter IDs or values.
 
 The 808 page includes a blue phosphor-style signal monitor beside its six knobs.
-Dim input and glowing output traces use 2048 samples of rolling plugin audio
-history (left channel), with a 1024-sample displayed window. A rising zero crossing
+Dim input and glowing output traces use 2048 samples of rolling low-pass-filtered
+plugin audio history (left channel), with a 1024-sample displayed window. A rising zero crossing
 steadies bass waveforms. Input is offset by the reported fixed latency for visual
-comparison. This is approximate whole-plugin signal visualization, not an isolated
-sub trace, spectrum, phase meter or sample-accurate measurement. Atomic samples
+comparison. This is approximate low-end visualization, not a spectrum, phase meter
+or sample-accurate measurement. Atomic samples
 avoid locks and allocation on the audio thread; drawing stays on the GUI thread.
+
+
+808 monitor update: input/output traces now use separate analysis-only 24 dB/oct
+LR low-pass filters following the 808 Split setting (40-400 Hz), with a smoothed
+cutoff. The title is 808 SIGNAL MONITOR. The right-hand segmented meter measures
+the larger filtered output peak across stereo channels, with 350 ms exponential
+release. Its display spans -60 to 0 dBFS; GODMODE lights at -3 dBFS and above.
+Waveforms remain left-channel previews; the footer shows the cutoff. GODMODE is a
+visual level tier, not a processing mode. Filters never alter audible audio.

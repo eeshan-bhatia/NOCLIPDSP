@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "DSP/ComparisonEngine.h"
+#include "DSP/LowEndMonitor.h"
 #include "Parameters/ParameterLayout.h"
 #include <atomic>
 
@@ -72,10 +73,12 @@ class NoclipProcessor final : public juce::AudioProcessor, private juce::Thread
     static constexpr size_t scopeSize = 2048;
     std::array<std::atomic<float>, scopeSize> scopeIn{}, scopeOut{};
     std::atomic<size_t> scopeHead{0};
+    std::atomic<float> lowEndPeak{0};
 
   private:
     void processAudio(juce::AudioBuffer<float> &, juce::MidiBuffer &, bool hostBypass);
     void run() override;
+    noclip::LowEndMonitor lowEndMonitor;
     using Snapshot = std::array<float, noclip::parameters::snapshotCount>;
     std::unique_ptr<noclip::ComparisonEngine> engine;
     std::unique_ptr<std::array<noclip::CurveMailbox, 8>> mailboxes =

@@ -1,5 +1,10 @@
 # Current release: 0.6.0
 
+808 SIGNAL MONITOR now shows low-pass-filtered input/output following 808 Split.
+A stereo low-end peak meter sits on its right; GODMODE is the top (-3 dBFS+) tier.
+Analysis is display-only. Filter rejection, stereo metering, release, rolling
+history and existing allocation tests pass; pluginval level 5 passes.
+
 Global Mix moved to the far-left top-row position. A blue input/output signal
 monitor now sits beside the six 808 knobs, using actual rolling plugin audio.
 

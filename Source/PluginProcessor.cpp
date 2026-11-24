@@ -192,6 +192,9 @@ void NoclipProcessor::prepareToPlay(double rate, int)
         scopeOut[i].store(0);
     }
     scopeHead.store(0);
+    lowEndMonitor.prepare(rate,
+                          audioSettings[static_cast<size_t>(audioSelected)].parameters.advanced.splitHz);
+    lowEndPeak.store(0);
     setLatencySamples(engine->latency());
     actualQuality.store(engine->activeQuality());
 }
@@ -256,17 +259,26 @@ void NoclipProcessor::processAudio(juce::AudioBuffer<float> &buffer, juce::MidiB
     const size_t head = scopeHead.load(std::memory_order_relaxed);
     // For large host blocks only the most recent history needs publishing.
     const int first = std::max(0, count - static_cast<int>(scopeSize));
-    for (int i = first; i < count; ++i)
+    lowEndMonitor.setCutoff(audioSettings[static_cast<size_t>(audioSelected)].parameters.advanced.splitHz);
+    for (int i = 0; i < count; ++i)
     {
-        const float x = main.getSample(0, i);
+        const float x = lowEndMonitor.input(main.getSample(0, i));
+        if (i < first)
+            continue;
         scopeIn[(head + static_cast<size_t>(i)) % scopeSize].store(std::isfinite(x) ? x : 0,
                                                                    std::memory_order_relaxed);
     }
     const auto meters = engine->process(main.getArrayOfWritePointers(), main.getNumChannels(), count,
                                         audioSettings, audioSelected, match->load() > .5f, hostBypass);
-    for (int i = first; i < count; ++i)
-        scopeOut[(head + static_cast<size_t>(i)) % scopeSize].store(main.getSample(0, i),
-                                                                    std::memory_order_relaxed);
+    for (int i = 0; i < count; ++i)
+    {
+        const float x =
+            lowEndMonitor.output(main.getSample(0, i), main.getNumChannels() > 1 ? main.getSample(1, i) : 0,
+                                 main.getNumChannels());
+        if (i >= first)
+            scopeOut[(head + static_cast<size_t>(i)) % scopeSize].store(x, std::memory_order_relaxed);
+    }
+    lowEndPeak.store(lowEndMonitor.peak(), std::memory_order_relaxed);
     scopeHead.store((head + static_cast<size_t>(count)) % scopeSize, std::memory_order_release);
     actualQuality.store(engine->activeQuality());
     matchReduction.store(engine->matchAttenuation());
