@@ -29,6 +29,11 @@ jobs:
           -DNOCLIP_FONT_FILE="${{ github.workspace }}/.tools/cs_regular.ttf"
       - name: Build
         run: cmake --build build-macos --config Release --parallel 3
+      - name: Preserve build for incremental diagnostics
+        uses: actions/cache/save@v4
+        with:
+          path: build-macos
+          key: macos-universal-build-${{ github.sha }}
       - name: Test Apple Silicon
         run: ctest --test-dir build-macos -C Release --output-on-failure
       - name: Test Intel under Rosetta
@@ -53,7 +58,7 @@ jobs:
           codesign --force --sign - "$bundle"
           codesign --verify --deep --strict --verbose=2 "$bundle"
           for architecture in arm64 x86_64; do
-            arch -"$architecture" "$validator" --strictness-level 5 --random-seed 12345 --timeout-ms 60000 --validate "$bundle" > "build-macos/pluginval-$architecture.txt" 2>&1 || { cat "build-macos/pluginval-$architecture.txt"; exit 1; }
+            arch -"$architecture" "$validator" --validate-in-process --strictness-level 5 --random-seed 12345 --timeout-ms 60000 --validate "$bundle" > "build-macos/pluginval-$architecture.txt" 2>&1 || { cat "build-macos/pluginval-$architecture.txt"; exit 1; }
             tail -12 "build-macos/pluginval-$architecture.txt"
           done
       - name: Package
