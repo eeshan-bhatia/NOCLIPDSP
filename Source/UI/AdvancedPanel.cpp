@@ -350,9 +350,21 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
     g.setColour(look.recess);
     g.fillRect(panel);
     look.bevel(g, panel, true);
+    // Centre visible glyphs rather than font ascent/descent: the custom font
+    // has uneven vertical metrics.
+    const auto centredTextPath = [&](const juce::String &text, float size, juce::Rectangle<float> box)
+    {
+        juce::GlyphArrangement glyphs;
+        glyphs.addLineOfText(look.font(size), text, 0, 0);
+        juce::Path path;
+        glyphs.createPath(path);
+        const auto bounds = path.getBounds();
+        path.applyTransform(juce::AffineTransform::translation(box.getCentreX() - bounds.getCentreX(),
+                                                               box.getCentreY() - bounds.getCentreY()));
+        return path;
+    };
     g.setColour(look.ink);
-    g.setFont(look.font(12));
-    g.drawText("808 SIGNAL MONITOR", panel.toNearestInt().withHeight(32), juce::Justification::centred);
+    g.fillPath(centredTextPath("808 SIGNAL MONITOR", 12, panel.withHeight(48)));
     auto graph = panel.reduced(12, 0).withTrimmedTop(48).withTrimmedBottom(52).withTrimmedRight(78);
     for (int i = 0; i <= 8; ++i)
     {
@@ -382,21 +394,11 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
         }
     }
     const size_t delay = static_cast<size_t>(std::clamp(processor.getLatencySamples(), 0, 127));
-    g.setFont(look.font(11));
+    const auto legend = panel.withY(panel.getBottom() - 52).withHeight(28);
     g.setColour(look.sand.brighter(.3f));
-    g.drawText("IN",
-               panel.toNearestInt()
-                   .withY(static_cast<int>(panel.getBottom() - 45))
-                   .withHeight(20)
-                   .withTrimmedRight(static_cast<int>(panel.getWidth() / 2)),
-               juce::Justification::centred);
+    g.fillPath(centredTextPath("IN", 11, legend.withWidth(legend.getWidth() / 2)));
     g.setColour(look.glow);
-    g.drawText("OUT",
-               panel.toNearestInt()
-                   .withY(static_cast<int>(panel.getBottom() - 45))
-                   .withHeight(20)
-                   .withTrimmedLeft(static_cast<int>(panel.getWidth() / 2)),
-               juce::Justification::centred);
+    g.fillPath(centredTextPath("OUT", 11, legend.withTrimmedLeft(legend.getWidth() / 2)));
     g.setColour(look.ink.withAlpha(.7f));
     g.setFont(look.font(10));
     g.drawText("LOW END / " + juce::String(static_cast<int>(processor.readParameters().advanced.splitHz)) +
@@ -406,18 +408,13 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
     const float level = processor.lowEndPeak.load(std::memory_order_relaxed);
     const float db = 20 * std::log10(std::max(1e-6f, level));
     const float normal = std::clamp((db + 60) / 60, 0.f, 1.f);
-    const float meterX = graph.getRight() + 18, meterW = 18, meterTop = graph.getY() + 24,
-                meterHeight = graph.getHeight() - 26;
+    const float meterX = graph.getRight() + 18, meterW = 18, meterTop = graph.getY() + 46,
+                meterHeight = graph.getHeight() - 48;
     const bool godmode = db >= -3;
     const auto white = juce::Colours::white;
-    juce::GlyphArrangement tierText;
-    tierText.addLineOfText(look.font(10), "GODMODE", 0, 0);
-    juce::Path tierPath;
-    tierText.createPath(tierPath);
-    const auto textBox = juce::Rectangle<float>(graph.getRight() + 3, graph.getY(), 76, 20);
-    const auto textBounds = tierPath.getBounds();
-    tierPath.applyTransform(juce::AffineTransform::translation(
-        textBox.getCentreX() - textBounds.getCentreX(), textBox.getCentreY() - textBounds.getCentreY()));
+    const auto textBox = juce::Rectangle<float>(graph.getRight() + 3, graph.getY(), 76, 38);
+    auto tierPath = centredTextPath("GOD", 18, textBox.withHeight(19));
+    tierPath.addPath(centredTextPath("MODE", 18, textBox.withTrimmedTop(19)));
     if (godmode)
     {
         juce::DropShadow(white.withAlpha(.8f), 12, {}).drawForPath(g, tierPath);
