@@ -12,6 +12,9 @@ class TacticalLookAndFeel final : public juce::LookAndFeel_V4
 {
 public:
     TacticalLookAndFeel();
+    void setBlueTheme(bool);
+    juce::Colour sand=ui::sand,ink=ui::ink,recess=ui::recess,amber=ui::amber,
+        green=ui::green,blue=ui::blue,light=ui::light,edge=ui::edge,glow=ui::glow;
     juce::Font font(float height) const;
     juce::Typeface::Ptr getTypefaceForFont(const juce::Font&) override;
     juce::Font getLabelFont(juce::Label&) override;
@@ -22,7 +25,7 @@ public:
     void drawRotarySlider(juce::Graphics&, int, int, int, int, float, float, float, juce::Slider&) override;
     void drawToggleButton(juce::Graphics&, juce::ToggleButton&, bool, bool) override;
     void drawComboBox(juce::Graphics&, int, int, bool, int, int, int, int, juce::ComboBox&) override;
-    static void bevel(juce::Graphics&, juce::Rectangle<float>, bool inset = false);
+    void bevel(juce::Graphics&, juce::Rectangle<float>, bool inset = false);
 private:
     juce::Typeface::Ptr typeface;
 };

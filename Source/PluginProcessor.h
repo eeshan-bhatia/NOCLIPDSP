@@ -1,6 +1,6 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "DSP/ProcessingChain.h"
+#include "DSP/ComparisonEngine.h"
 #include "Parameters/ParameterLayout.h"
 #include <atomic>
 
@@ -37,18 +37,36 @@ public:
     noclip::CurveTable readCurveTable() const noexcept;
     void setParameter(const char* id, float value);
     void loadBassPreset(int index);
+    void selectSnapshot(int);
+    void copySnapshot(int from,int to);
+    int selectedSnapshot() const noexcept { return selected.load(); }
+    std::atomic<float> sidechainReduction{0}, matchReduction{0};
+    std::atomic<bool> sidechainConnected{false}, matchReady{false}, comparing{false};
     // GUI samples actual input/output, not a transfer animation.
     std::array<std::atomic<float>,256> scopeIn {}, scopeOut {};
 private:
     void processAudio(juce::AudioBuffer<float>&, juce::MidiBuffer&, bool hostBypass);
     void run() override;
-    noclip::ProcessingChain engine;
-    noclip::CurveMailbox curveMailbox;
-    noclip::CurveTable audioCurve;
-    std::array<std::atomic<float>*, noclip::parameters::ids.size()> values {};
-    std::array<std::atomic<float>*, noclip::parameters::extraFloats.size()> extra {};
-    std::array<std::atomic<float>*, noclip::parameters::options.size()> options {};
-
+    using Snapshot = std::array<float,noclip::parameters::snapshotCount>;
+    std::unique_ptr<noclip::ComparisonEngine> engine;
+    std::array<noclip::CurveMailbox,2> mailboxes;
+    std::array<noclip::CurveTable,2> pendingTables;
+    std::array<bool,2> pending {false,false};
+    std::array<std::array<std::atomic<float>,noclip::parameters::snapshotCount>,2> saved {};
+    std::array<std::atomic<float>*,noclip::parameters::snapshotCount> raw {};
+    std::array<juce::RangedAudioParameter*,noclip::parameters::snapshotCount> controls {};
+    std::atomic<float>* match=nullptr;
+    std::atomic<int> selected{0};
+    std::atomic<unsigned> revision{0};
+    juce::CriticalSection snapshotLock;
+    std::array<Snapshot,2> audioValues {};
+    std::array<noclip::ComparisonSettings,2> audioSettings;
+    int audioSelected=0;
+    Snapshot capture(int slot) const noexcept;
+    void store(int slot,const Snapshot&) noexcept;
+    void apply(const Snapshot&);
+    static noclip::ComparisonSettings decode(const Snapshot&) noexcept;
+    static noclip::CurveTable curveFor(const Snapshot&) noexcept;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NoclipProcessor)
 };

@@ -88,7 +88,17 @@ int processingTests()
         for(float x:l) { check(std::isfinite(x)&&std::abs(x)<=1.00001f,"quality/routing automation bounded and finite"); maxJump=std::max(maxJump,std::abs(x-previous)); previous=x; }
     }
     check(maxJump<.2f,"quality and routing changes avoid discontinuity spikes");
-    check(allocationCount==0,"no standard new/new[] during processing and quality switches");
+    NoclipProcessor processor;
+    auto layout=processor.getBusesLayout(); layout.inputBuses.set(1,juce::AudioChannelSet::mono()); processor.setBusesLayout(layout);
+    processor.setParameter("scEnabled",1); processor.setParameter("abMatch",1); processor.prepareToPlay(48000,257);
+    juce::AudioBuffer<float> audio(3,257); juce::MidiBuffer midi;
+    for(int b=0;b<80;++b)
+    {
+        if(b==20) processor.selectSnapshot(1);
+        audio.clear(); for(int i=0;i<257;++i) { audio.setSample(0,i,.2f); audio.setSample(1,i,.2f); audio.setSample(2,i,.8f); }
+        monitorAllocations=true; processor.processBlock(audio,midi); monitorAllocations=false;
+    }
+    check(allocationCount==0,"no standard new/new[] during processing, sidechain, matching and switches");
     // Host bypass must be an exact delay, including when quality is not 1x.
     p={}; p.bypass=true; chain->prepare(48000,1,p,3,curve);
     std::vector<float> bypass(1024,0); bypass[0]=.3f; float* mono[]{bypass.data()};

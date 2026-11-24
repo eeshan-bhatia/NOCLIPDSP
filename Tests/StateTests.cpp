@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 int processingTests();
+int comparisonTests();
 
 namespace {
 void set(NoclipProcessor& processor, const char* id, float value)
@@ -127,6 +128,7 @@ int main()
         ||restored.state.getRawParameterValue("routing")->load()!=0||restored.state.getRawParameterValue("curveA5")->load()!=.25f) return 12;
 
     auto development=original.state.copyState(); development.setProperty("version",3,nullptr);
+    for(int i=development.getNumChildren()-1;i>=0;--i) if(!noclip::parameters::legacyIds().contains(development.getChild(i).getProperty("id").toString())) development.removeChild(i,nullptr);
     for(auto spec:noclip::parameters::legacyBandFloats)
     {
         juce::ValueTree child("PARAM"); child.setProperty("id",spec.id,nullptr); child.setProperty("value",spec.initial,nullptr);
@@ -139,5 +141,5 @@ int main()
     { std::cerr<<"Development migration: routing="<<restored.state.getRawParameterValue("routing")->load()<<", curve="<<restored.state.getRawParameterValue("curveA5")->load()<<'\n'; return 14; }
 
     std::cout << "State, rejection, layouts, restored audio and latency passed\n";
-    return processingTests()==0?0:13;
+    return processingTests()+comparisonTests()==0?0:13;
 }

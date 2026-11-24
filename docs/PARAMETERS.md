@@ -1,4 +1,4 @@
-# Parameters and saved state (schema 4)
+# Parameters and saved state (schema 5)
 
 | ID | Range / choices | Default |
 | --- | --- | --- |
@@ -29,7 +29,19 @@
 | symmetry | lock mirrored editing off/on | on |
 | editSlot | A / B | A |
 
-There are 44 saved parameters. Curve points are non-automatable editor controls;
+| scEnabled | external key off/on | off |
+| scSensitivity | -60..0 dBFS | -24 |
+| scAmount | 0..24 dB drive relief | 6 |
+| scAttack | 0.1..100 ms | 5 |
+| scRelease | 10..1000 ms | 150 |
+| abMatch | RMS matching off/on | off |
+
+There are 50 live parameters. The 49 except abMatch are stored in each whole-plugin
+snapshot. A/B selection is a UI command, saved as the COMPARE active property;
+MATCH is global and remains unchanged when switching. The existing curve A/B
+parameters retain their separate meaning.
+
+ Curve points are non-automatable editor controls;
 other DSP controls (including morph) support host automation. Point edits publish
 via a worker and crossfade. Values, routing and quality changes are smoothed.
 Double-click knobs for defaults. Numeric boxes accept ASCII and Unicode minus.
@@ -44,7 +56,7 @@ The sample ceiling applies after mix/output when active. Enable/bypass transitio
 can blend uncapped paths, so no instantaneous bound is promised during transitions.
 No true-peak guarantee. See PHASE34.md for filters, latency and sub-preservation.
 
-Schema 4 validates exact IDs, finite values, ranges and discrete choices before
+Schema 5 validates root and both snapshot IDs, finite values, ranges and discrete choices before
 replacement. Schema 1's three parameters migrate with clipping disabled. Schema 2's
 11 parameters retain values; new curve/808 processing is off, quality=1x, DC=off.
 Development schema 3 retains curves/808 settings, maps routing to the simplified
@@ -53,3 +65,8 @@ Plugin IDs and NOCLIPDSP_STATE root remain unchanged.
 
 Output was extended from -48..+12 to -48..+24 dB before this release. Saved dB values
 remain intact, but existing normalized Output automation needs review.
+
+Schema 5 stores two SLOT children inside COMPARE, each with 49 parameter values.
+Active slot and root values must agree. Validation completes before replacing any
+state. Schema 4 clones its existing sound into both slots with sidechain and MATCH
+off. Schemas 1–3 retain their previous migration behavior and initialize both slots.

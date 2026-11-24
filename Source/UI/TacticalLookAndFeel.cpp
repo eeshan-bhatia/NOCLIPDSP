@@ -12,6 +12,23 @@ TacticalLookAndFeel::TacticalLookAndFeel()
     const auto* data = NoclipFontData::getNamedResource(NoclipFontData::namedResourceList[0], size);
     typeface = juce::Typeface::createSystemTypefaceFor(data, static_cast<size_t>(size));
 #endif
+    setBlueTheme(false);
+}
+void TacticalLookAndFeel::setBlueTheme(bool enabled)
+{
+    sand=enabled?juce::Colour(0xff788e9d):ui::sand;
+    ink=enabled?juce::Colour(0xfff7faff):ui::ink;
+    recess=enabled?juce::Colour(0xff293944):ui::recess;
+    light=enabled?juce::Colour(0xff4c6373):ui::light;
+    edge=enabled?juce::Colour(0xff354954):ui::edge;
+    green=enabled?juce::Colour(0xff245d87):ui::green;
+    glow=enabled?juce::Colour(0xff75caff):ui::glow;
+    amber=enabled?juce::Colour(0xffb0e2ff):ui::amber;
+    blue=enabled?juce::Colour(0xff5d88b8):ui::blue;
+    setColour(juce::TextButton::buttonColourId,light);
+    setColour(juce::TextButton::buttonOnColourId,green);
+    setColour(juce::TextButton::textColourOnId,enabled?ink:ui::light);
+    setColour(juce::TextButton::textColourOffId,ink);
     setColour(juce::Label::textColourId, ink);
     setColour(juce::Slider::textBoxTextColourId, ink);
     setColour(juce::Slider::textBoxBackgroundColourId, light);
@@ -47,7 +64,7 @@ juce::Font TacticalLookAndFeel::getLabelFont(juce::Label& label)
 }
 juce::Font TacticalLookAndFeel::getComboBoxFont(juce::ComboBox& box) { return font(box.getName()=="compact"?13.0f:18.0f); }
 juce::Font TacticalLookAndFeel::getPopupMenuFont() { return font(18); }
-juce::Font TacticalLookAndFeel::getTextButtonFont(juce::TextButton&, int) { return font(18); }
+juce::Font TacticalLookAndFeel::getTextButtonFont(juce::TextButton& button, int) { return font(button.getName()=="compact"?13.0f:18.0f); }
 juce::Label* TacticalLookAndFeel::createSliderTextBox(juce::Slider& slider)
 {
     auto* label = juce::LookAndFeel_V4::createSliderTextBox(slider);

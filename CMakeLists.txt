@@ -80,7 +80,7 @@ if(NOCLIP_BUILD_PLUGIN)
         juce::juce_audio_utils juce::juce_dsp
         PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
     if(BUILD_TESTING)
-        add_executable(StateTests Tests/StateTests.cpp Tests/ProcessingTests.cpp)
+        add_executable(StateTests Tests/StateTests.cpp Tests/ProcessingTests.cpp Tests/ComparisonTests.cpp)
         target_include_directories(StateTests PRIVATE Source)
         target_link_libraries(StateTests PRIVATE noclip.DSP juce::juce_audio_utils)
         add_test(NAME StateTests COMMAND StateTests)

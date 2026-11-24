@@ -3,6 +3,7 @@
 #include "UI/TacticalLookAndFeel.h"
 #include "UI/MeterBallistics.h"
 #include "UI/AdvancedPanel.h"
+#include "UI/SidechainPanel.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 class NoclipEditor final : public juce::AudioProcessorEditor, private juce::Timer
 {
@@ -17,7 +18,15 @@ private:
     noclip::ui::TacticalLookAndFeel look;
     juce::Image icon, sandTexture;
     AdvancedPanel advanced;
-    std::array<juce::TextButton,3> pages;
+    SidechainPanel sidechain;
+    std::array<juce::TextButton,4> pages;
+    juce::TextButton snapshotA{"A"},snapshotB{"B"},copyAB{"A TO B"},copyBA{"B TO A"};
+    juce::ToggleButton match{"RMS MATCH"};
+    juce::Label compareStatus;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> matchAttachment;
+    bool sidechainView=false, blueTheme=false;
+    void applyTheme(bool);
+
     juce::ComboBox quality;
     juce::ToggleButton clipDc { "DC FILTER" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> clipDcAttachment;

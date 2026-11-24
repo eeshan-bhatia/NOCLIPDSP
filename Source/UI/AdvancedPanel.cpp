@@ -6,7 +6,9 @@ float raw(NoclipProcessor& p,const char* id) { return p.state.getRawParameterVal
 }
 void CurveEditor::paint(juce::Graphics& g)
 {
-    using namespace noclip::ui;
+    using noclip::ui::TacticalLookAndFeel;
+    const auto& theme=static_cast<TacticalLookAndFeel&>(getLookAndFeel());
+    const auto recess=theme.recess,sand=theme.sand,amber=theme.amber,blue=theme.blue,glow=theme.glow;
     g.fillAll(recess); const auto area=plot();
     g.setColour(sand.withAlpha(.2f));
     for(int i=0;i<9;++i) g.drawVerticalLine(static_cast<int>(area.getX()+area.getWidth()*static_cast<float>(i)/8),area.getY(),area.getBottom());
@@ -170,10 +172,12 @@ void AdvancedPanel::resized()
     else
     {
         bassPreset.setBounds(4,0,270,28); nonlinear.setBounds(285,0,150,28);
-        for(size_t i=0;i<6;++i) place(3+i,{static_cast<int>(i%3)*w/3,40+static_cast<int>(i/3)*(h-40)/2,w/3,(h-40)/2});
+        const int cellWidth=std::min(220,w/3),cellHeight=std::min(190,(h-40)/2);
+        const int left=(w-3*cellWidth)/2;
+        for(size_t i=0;i<6;++i) place(3+i,{left+static_cast<int>(i%3)*cellWidth,40+static_cast<int>(i/3)*cellHeight,cellWidth,cellHeight});
     }
 }
 void AdvancedPanel::paint(juce::Graphics& g)
 {
-    g.setColour(noclip::ui::edge); g.drawRect(getLocalBounds(),1);
+    g.setColour(static_cast<noclip::ui::TacticalLookAndFeel&>(getLookAndFeel()).edge); g.drawRect(getLocalBounds(),1);
 }

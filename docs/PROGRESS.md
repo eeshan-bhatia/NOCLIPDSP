@@ -46,17 +46,27 @@ See PHASE34.md and TESTING.md for commands, measurements and qualifications.
 FL Studio listening, project save/reload and complete accessibility remain user
 validation priorities. No production-mastering, true-peak or LUFS claim is made.
 
-## Next, agreed priorities
+## 0.5.0 — sidechain and whole-plugin A/B
 
-Finish and evaluate the simplified SHAPE/808 build first. Then prioritize:
-1. Level-matched full-parameter A/B (distinct from implemented curve A/B).
-2. Sidechain-aware 808/clipping control.
-3. Further sound/CPU polish and targeted master/808 presets.
+Implemented optional mono/stereo external sidechain, four rotary controls and
+host bus isolation. Relief eases nonlinear drive to unity without ducking clean
+808 branches. Complete A/B snapshots include curves, quality and sidechain;
+copy, host recall, warm switching and optional attenuation-only RMS matching.
+Schema 5 validates both banks and migrates schemas 1–4. Audio callback allocation
+checks now cover matching, sidechain and snapshot switches.
 
-General multiband UI is deferred. Dynamic limiting, lookahead, advanced loudness
-meters, full transient modes, user preset files and complete release polish remain
-unimplemented. The initial Windows CI workflow is included; local checks are not
-proof of remote CI success.
+808 uses slate blue (#788e9d background, darker blue surfaces), white text and
+blue glow, with compact centered knobs. No 808 DSP controls were removed in this
+update. Other pages retain sand/green styling. Theme follows the active routing,
+including while the sidechain utility page is open.
+
+## Next: focused waveshaper workflow
+
+The user's latest direction supersedes the earlier general multiband deferral:
+consolidate CLIP/SHAPE and introduce MASTER / LOW / MID / HIGH editing with
+independent band curves in three-band mode. Keep 808 as the distinct flagship.
+This is a subsequent routing/state/UI change, not implemented in 0.5.0; see
+WAVESHAPER_WORKFLOW.md for reuse, control deduplication and migration requirements.
 
 ## Artifacts and publishing
 
@@ -72,3 +82,8 @@ suites passed, pluginval level 5 SUCCESS. Mirrored curve dragging and the 808 kn
 page were visually checked. User stopped further Computer Use; no further UI
 control was performed. Final small font/control-state refinements were compiled
 and plugin-validated. Phase 3/808 FL Studio listening/recall remains unverified.
+
+0.5.0 validation: Release VST3/standalone built; all four CTest suites and pluginval
+level 5 passed. Offscreen minimum-size editor renders checked both palettes and
+sidechain controls without opening audio devices. Real FL Studio sidechain routing,
+listening and project recall remain user validation priorities.

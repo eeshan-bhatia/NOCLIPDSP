@@ -1,7 +1,7 @@
 #include "PluginEditor.h"
 #include "NoclipArtwork.h"
 NoclipEditor::NoclipEditor(NoclipProcessor& p)
-    : AudioProcessorEditor(p), processor(p), advanced(p),
+    : AudioProcessorEditor(p), processor(p), advanced(p), sidechain(p),
       bypassAttachment(p.state, noclip::parameters::bypass, bypass),
       enabledAttachment(p.state, noclip::parameters::clipEnabled, enabled),
       curveAttachment(p.state, noclip::parameters::curve, curve)
@@ -70,7 +70,15 @@ NoclipEditor::NoclipEditor(NoclipProcessor& p)
     curve.setTooltip("Soft clipping family. Curve changes crossfade over 20 ms.");
     addAndMakeVisible(curve); addAndMakeVisible(bypass); addAndMakeVisible(enabled);
     enabled.setTooltip("Enable the nonlinear engine, selected routing and sample ceiling. Off retains input/output gain.");
-    addAndMakeVisible(advanced);
+    addAndMakeVisible(advanced); addAndMakeVisible(sidechain);
+    for(auto* button:{&snapshotA,&snapshotB,&copyAB,&copyBA}) { addAndMakeVisible(button); button->setName("compact"); }
+    snapshotA.onClick=[this]{processor.selectSnapshot(0);}; snapshotB.onClick=[this]{processor.selectSnapshot(1);};
+    copyAB.onClick=[this]{processor.copySnapshot(0,1);}; copyBA.onClick=[this]{processor.copySnapshot(1,0);};
+    copyAB.setTooltip("Replace whole-plugin B with A, including curves, quality and sidechain.");
+    copyBA.setTooltip("Replace whole-plugin A with B, including curves, quality and sidechain.");
+    addAndMakeVisible(match); addAndMakeVisible(compareStatus); compareStatus.setName("compact");
+    matchAttachment=std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(p.state,"abMatch",match);
+    match.setTooltip("Runs A and B on the same input. RMS-based attenuation only, up to 12 dB. Allow a few seconds to settle. Not LUFS matching.");
     quality.addItemList({"1X CREATIVE","2X ECO","4X NORMAL","8X HIGH"},1);
     quality.setTooltip("Shared FIR oversampling. Fixed latency across qualities; changes warm up then crossfade.");
     addAndMakeVisible(quality);
@@ -78,31 +86,36 @@ NoclipEditor::NoclipEditor(NoclipProcessor& p)
     clipDcAttachment=std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(p.state,"dcFilter",clipDc);
     clipDc.setTooltip("Optional 10 Hz DC high pass on the wet signal. Also available in SHAPE and 808.");
     qualityAttachment=std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(p.state,"quality",quality);
-    const juce::StringArray names{"CLIP","SHAPE","808 ENGINE"};
+    const juce::StringArray names{"CLIP","SHAPE","808 ENGINE","SIDECHAIN"};
     for(size_t i=0;i<pages.size();++i)
     {
         pages[i].setButtonText(names[static_cast<int>(i)]); addAndMakeVisible(pages[i]);
         pages[i].onClick=[this,i]
         {
+            sidechainView=i==3;
+            if(sidechainView) { updatePage(); return; }
             processor.setParameter("routing",i==2?1.0f:0.0f);
             processor.setParameter("mode",i==1?1.0f:0.0f); updatePage();
         };
     }
-    meterReadouts = { "\xe2\x88\x92" "100.0", "\xe2\x88\x92" "100.0", "\xe2\x88\x92" "100.0", "0" };
+    const auto silence=juce::String(-100.0,1).replaceCharacter('-',juce::juce_wchar(0x2212));
+    meterReadouts = {silence,silence,silence,"0"};
     lastMeterTime = juce::Time::getMillisecondCounterHiRes();
     setResizable(true, true);
     setResizeLimits(1000, 820, 1500, 1100);
     setSize(1100, 900);
     updatePage();
+    timerCallback();
     startTimerHz(30);
 }
 NoclipEditor::~NoclipEditor() { stopTimer(); setLookAndFeel(nullptr); }
 void NoclipEditor::paint(juce::Graphics& g)
 {
-    using namespace noclip::ui;
+    const auto ink=look.ink,sand=look.sand,light=look.light,edge=look.edge,recess=look.recess,
+        amber=look.amber,blue=look.blue,green=look.green,glow=look.glow;
     g.setTiledImageFill(sandTexture, 0, 0, 1.0f);
     g.fillRect(getLocalBounds());
-    TacticalLookAndFeel::bevel(g, getLocalBounds().toFloat().reduced(3));
+    look.bevel(g, getLocalBounds().toFloat().reduced(3));
     g.setColour(edge); g.drawHorizontalLine(106, 20, static_cast<float>(getWidth() - 20));
     g.setColour(light); g.drawHorizontalLine(107, 20, static_cast<float>(getWidth() - 20));
 
@@ -111,7 +124,7 @@ void NoclipEditor::paint(juce::Graphics& g)
     g.drawImageWithin(icon, 24, 24, 72, 72, juce::RectanglePlacement::centred);
     // Preserve the original crosshair's thin upper stroke at small/DPI-scaled
     // sizes. A device-independent vector overdraw prevents raster dropout.
-    g.setColour(ink);
+    g.setColour(noclip::ui::ink);
     g.fillRect(59.5f,25.2f,1.25f,11.0f);
     title.addLineOfText(look.font(48), "NOCLIP.DSP", 110, 69);
     juce::Path titlePath;
@@ -124,7 +137,7 @@ void NoclipEditor::paint(juce::Graphics& g)
     g.setColour(blue);
     g.fillRect(getWidth() - 131, 12, 106, 18);
     g.setColour(ink); g.setFont(look.font(13));
-    g.drawText("BUILD 0.4.0", getWidth() - 129, 12, 102, 18, juce::Justification::centred);
+    g.drawText("BUILD 0.5.0", getWidth() - 129, 12, 102, 18, juce::Justification::centred);
 
     g.setFont(look.font(16)); g.setColour(ink);
     g.drawText(currentPage==0?"TRANSFER MONITOR":"INPUT / OUTPUT WAVEFORMS", 28, 116, 470, 22, juce::Justification::centredLeft);
@@ -136,7 +149,7 @@ void NoclipEditor::paint(juce::Graphics& g)
     g.drawText("INPUT TO OUTPUT / " + caption, getWidth() - 440, 116, 410, 22, juce::Justification::centredRight);
     const juce::Rectangle<float> area(26, 145, static_cast<float>(getWidth() - 52), 130);
     g.setColour(recess); g.fillRect(area);
-    TacticalLookAndFeel::bevel(g, area, true);
+    look.bevel(g, area, true);
     for (int i = 1; i < 16; ++i)
     {
         g.setColour(sand.withAlpha(i % 4 == 0 ? 0.16f : 0.06f));
@@ -204,19 +217,19 @@ void NoclipEditor::paint(juce::Graphics& g)
     }
     g.restoreState();
 
-    const auto controlArea = getLocalBounds().withTrimmedTop(320).withTrimmedBottom(88).reduced(20, 0);
+    const auto controlArea = getLocalBounds().withTrimmedTop(360).withTrimmedBottom(88).reduced(20, 0);
     const int cellWidth = controlArea.getWidth() / 4, cellHeight = controlArea.getHeight() / 2;
     if(currentPage==0) for (int row = 0; row < 2; ++row)
         for (int col = 0; col < 4; ++col)
         {
             auto cell = juce::Rectangle<int>(controlArea.getX() + col * cellWidth,
                         controlArea.getY() + row * cellHeight, cellWidth, cellHeight).reduced(3);
-            TacticalLookAndFeel::bevel(g, cell.toFloat());
+            look.bevel(g, cell.toFloat());
         }
     auto status = juce::Rectangle<float>(24, static_cast<float>(getHeight() - 76),
                                         static_cast<float>(getWidth() - 48), 34);
     g.setColour(light.withAlpha(0.6f)); g.fillRect(status);
-    TacticalLookAndFeel::bevel(g, status, true);
+    look.bevel(g, status, true);
     constexpr std::array<const char*, 4> names { "IN", "OUT", "RMS", "CLIP" };
     const int meterWidth = (getWidth() - 48) / 4;
     for (size_t i = 0; i < names.size(); ++i)
@@ -229,8 +242,12 @@ void NoclipEditor::paint(juce::Graphics& g)
         const auto digits = meterReadouts[i].paddedLeft(' ', 6);
         g.setFont(look.font(12).withHorizontalScale(0.65f));
         for (int j = 0; j < 6; ++j)
-            g.drawText(digits.substring(j, j + 1), x + 60 + j * 13, getHeight() - 74,
-                       13, 30, juce::Justification::centred, false);
+        {
+            const auto digit=digits.substring(j,j+1);
+            if(digit==juce::String::charToString(juce::juce_wchar(0x2212)))
+                g.fillRect(x+63+j*13,getHeight()-60,7,2);
+            else g.drawText(digit,x+60+j*13,getHeight()-74,13,30,juce::Justification::centred,false);
+        }
         g.setFont(look.font(10));
         g.drawText(i == 3 ? "%" : "dBFS", x + 145, getHeight() - 74, 40, 30, juce::Justification::centredLeft, false);
     }
@@ -245,11 +262,14 @@ void NoclipEditor::resized()
     bypass.setBounds(getWidth() - 142, 40, 116, 28);
     enabled.setBounds(getWidth() - 268, 40, 116, 28);
     curve.setBounds(getWidth() - 268, 76, 242, 26);
-    for(size_t i=0;i<pages.size();++i) pages[i].setBounds(24+static_cast<int>(i)*145,282,137,27);
+    for(size_t i=0;i<pages.size();++i) { pages[i].setName("compact"); pages[i].setBounds(24+static_cast<int>(i)*133,282,125,27); }
+    snapshotA.setBounds(24,320,45,27); snapshotB.setBounds(76,320,45,27);
+    copyAB.setBounds(137,320,90,27); copyBA.setBounds(235,320,90,27);
+    match.setBounds(344,320,160,27); compareStatus.setBounds(520,320,getWidth()-546,27);
     quality.setBounds(getWidth()-270,282,244,27);
     clipDc.setBounds(getWidth()-430,282,150,27);
-    auto area = getLocalBounds().withTrimmedTop(320).withTrimmedBottom(88).reduced(20, 0);
-    advanced.setBounds(area);
+    auto area = getLocalBounds().withTrimmedTop(360).withTrimmedBottom(88).reduced(20, 0);
+    advanced.setBounds(area); sidechain.setBounds(area);
     const int width = area.getWidth() / 4, height = area.getHeight() / 2;
     // Drive, threshold, shape, knee across the top; input, output, ceiling, mix below.
     constexpr std::array<size_t, 8> order { 2, 3, 4, 5, 0, 1, 6, 7 };
@@ -265,6 +285,9 @@ void NoclipEditor::resized()
 void NoclipEditor::timerCallback()
 {
     updatePage();
+    snapshotA.setToggleState(processor.selectedSnapshot()==0,juce::dontSendNotification);
+    snapshotB.setToggleState(processor.selectedSnapshot()==1,juce::dontSendNotification);
+    compareStatus.setText(processor.comparing.load()?"SWITCHING":(match.getToggleState()?(processor.matchReady.load()?"MATCH TRIM "+juce::String(processor.matchReduction.load(),1)+" dB":"MATCH LEARNING / PLAY AUDIO"):"WHOLE PLUGIN A / B"),juce::dontSendNotification);
     advanced.refresh();
     const double now = juce::Time::getMillisecondCounterHiRes();
     const double elapsed = (now - lastMeterTime) / 1000.0;
@@ -288,14 +311,41 @@ void NoclipEditor::timerCallback()
 void NoclipEditor::updatePage()
 {
     const int routing=static_cast<int>(processor.state.getRawParameterValue("routing")->load());
-    const int page=routing==0?static_cast<int>(processor.state.getRawParameterValue("mode")->load()):2;
+    const int page=sidechainView?3:(routing==0?static_cast<int>(processor.state.getRawParameterValue("mode")->load()):2);
+    if(blueTheme!=(routing==1)) applyTheme(routing==1);
     curve.setEnabled(processor.state.getRawParameterValue("mode")->load()<.5f);
     if(page==currentPage) return;
     currentPage=page;
     for(auto& knob:knobs) knob.setVisible(page==0);
     for(auto& label:labels) label.setVisible(page==0);
-    advanced.setVisible(page!=0); advanced.setPage(page);
+    advanced.setVisible(page==1||page==2); if(page==1||page==2) advanced.setPage(page);
+    sidechain.setVisible(page==3);
     clipDc.setVisible(page==0);
     for(size_t i=0;i<pages.size();++i) pages[i].setToggleState(static_cast<int>(i)==page,juce::dontSendNotification);
     repaint();
+}
+
+void NoclipEditor::applyTheme(bool enabledBlue)
+{
+    blueTheme=enabledBlue; look.setBlueTheme(blueTheme);
+    juce::Random grain(0x4e434c50);
+    {
+        juce::Image::BitmapData pixels(sandTexture,juce::Image::BitmapData::writeOnly);
+        for(int y=0;y<256;++y) for(int x=0;x<256;++x)
+        {
+            const int variation=grain.nextInt(25)-12; const auto base=look.sand;
+            pixels.setPixelColour(x,y,juce::Colour(static_cast<juce::uint8>(base.getRed()+variation),static_cast<juce::uint8>(base.getGreen()+variation),static_cast<juce::uint8>(base.getBlue()+variation)));
+        }
+    }
+    const auto update=[this](auto&& self,juce::Component& component)->void
+    {
+        if(auto* slider=dynamic_cast<juce::Slider*>(&component))
+        {
+            slider->setColour(juce::Slider::textBoxTextColourId,look.ink);
+            slider->setColour(juce::Slider::textBoxBackgroundColourId,look.light);
+            slider->setColour(juce::Slider::textBoxOutlineColourId,look.edge);
+        }
+        for(auto* child:component.getChildren()) self(self,*child);
+    };
+    update(update,*this); sendLookAndFeelChange(); repaint();
 }

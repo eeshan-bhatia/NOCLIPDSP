@@ -1,7 +1,7 @@
 # noclip.DSP
 
 A C++20/JUCE clipper and waveshaper focused on masters, aggressive drums and 808s.
-**0.4.0 is a development build, not a finished mastering limiter.**
+**0.5.0 is a development build, not a finished mastering limiter.**
 Windows VST3 and standalone; original AGPLv3 license preserved.
 
 ## Features
@@ -13,12 +13,14 @@ Windows VST3 and standalone; original AGPLv3 license preserved.
 - Bias/asymmetry, optional 10 Hz DC blocking, input/output waveform views and readable peak/RMS/activity meters.
 - Rotary controls throughout, with a separate GAIN / MIX view in SHAPE and 808.
 
-General multiband controls were deliberately removed to keep the product focused.
-Sidechain control and level-matched whole-plugin A/B are next priorities. Current
-A/B stores curves, not complete parameter snapshots.
+- SIDECHAIN: external mono/stereo key with sensitivity, drive relief, attack and release. Eases distortion without feeding the key into the output.
+- Whole-plugin A/B snapshots, copy in either direction, smooth switching and optional attenuation-only RMS matching. Separate from the curve editor's A/B morph.
+- The 808 engine has a slate-blue theme, white text, blue glow and compact knob spacing. Other pages retain sand/green styling.
 
-The editor uses a sand-textured background, dark green knobs with glow, and
-separate CLIP / SHAPE / 808 ENGINE pages.
+See [sidechain and comparison usage](docs/SIDECHAIN_AB.md). The next planned
+workflow consolidates CLIP/SHAPE and introduces independently editable band
+waveshapers; that redesign is **not implemented in 0.5.0**. See
+[focused waveshaper design](docs/WAVESHAPER_WORKFLOW.md).
 
 ## Build
 
@@ -56,8 +58,8 @@ See [Phase 3/4 design and measurements](docs/PHASE34.md).
 The ceiling is a sample clamp, not a true-peak limiter. A final sample guard catches
 reconstruction overshoot but can itself introduce aliasing. Sub Preserve protects
 a filtered low branch; it does not guarantee exact fundamental amplitude, and
-output gain/ceiling still affect it. No LUFS, dynamic limiter, external sidechain
-or loudness matching is claimed. FL Studio listening/project recall is not yet
+output gain/ceiling still affect it. No LUFS, true-peak or dynamic limiter is claimed. RMS matching is an
+approximation, not perceptual loudness normalization. FL Studio listening/project recall is not yet
 validated by this build's automated tests.
 
 Schema 4 saves all current controls and both curves. Earlier states migrate
