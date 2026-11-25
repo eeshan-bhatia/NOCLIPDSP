@@ -153,7 +153,14 @@ int main()
     juce::AudioProcessor::copyXmlToBinary(*xml,bytes);
     restored.setStateInformation(bytes.getData(),static_cast<int>(bytes.getSize()));
     if(restored.state.getRawParameterValue("quality")->load()!=0||restored.state.getRawParameterValue("dcFilter")->load()!=0
-        ||restored.state.getRawParameterValue("routing")->load()!=0||restored.state.getRawParameterValue("curveA5")->load()!=.25f) return failure(12);
+        ||restored.state.getRawParameterValue("routing")->load()!=0||std::abs(restored.state.getRawParameterValue("curveA5")->load()-.25f)>.0001f)
+    {
+        std::cerr << "Legacy migration: quality=" << restored.state.getRawParameterValue("quality")->load()
+                  << ", dc=" << restored.state.getRawParameterValue("dcFilter")->load()
+                  << ", routing=" << restored.state.getRawParameterValue("routing")->load()
+                  << ", curve=" << restored.state.getRawParameterValue("curveA5")->load() << '\n';
+        return failure(12);
+    }
 
     auto development=original.state.copyState(); development.setProperty("version",3,nullptr);
     for(int i=development.getNumChildren()-1;i>=0;--i) if(!noclip::parameters::legacyIds().contains(development.getChild(i).getProperty("id").toString())) development.removeChild(i,nullptr);

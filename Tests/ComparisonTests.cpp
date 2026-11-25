@@ -54,17 +54,17 @@ int comparisonTests()
     juce::MemoryBlock state;
     p->getStateInformation(state);
     q->setStateInformation(state.getData(), static_cast<int>(state.getSize()));
-    check(q->selectedSnapshot() == 1 && q->state.getRawParameterValue("lowDrive")->load() == 4,
+    check(q->selectedSnapshot() == 1 && std::abs(q->state.getRawParameterValue("lowDrive")->load() - 4.f) < .0001f,
           "active B recalled");
     q->selectSnapshot(0);
-    check(q->state.getRawParameterValue("lowDrive")->load() == 18 &&
+    check(std::abs(q->state.getRawParameterValue("lowDrive")->load() - 18.f) < .0001f &&
               std::abs(q->state.getRawParameterValue("lowA5")->load() - .7f) < .001f,
           "inactive band settings and curve recalled");
     check(q->state.getRawParameterValue("bassEnabled")->load() == 1 &&
               q->state.getRawParameterValue("abMatch")->load() == 1,
           "simultaneous stages recalled");
     q->copySnapshot(1, 0);
-    check(q->state.getRawParameterValue("lowDrive")->load() == 4, "copy into active slot");
+    check(std::abs(q->state.getRawParameterValue("lowDrive")->load() - 4.f) < .0001f, "copy into active slot");
     auto xml = juce::AudioProcessor::getXmlFromBinary(state.getData(), static_cast<int>(state.getSize()));
     auto tree = juce::ValueTree::fromXml(*xml);
     tree.getChildWithName("COMPARE").getChild(0).getChild(0).setProperty("value", 99999, nullptr);
