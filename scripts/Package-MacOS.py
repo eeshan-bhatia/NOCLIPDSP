@@ -20,7 +20,7 @@ def main():
     if packaging.git(juce, "rev-parse", "HEAD").decode().strip() != packaging.JUCE_REVISION:
         raise SystemExit("Unexpected JUCE revision")
     bundle = ROOT / "build-macos/noclip.DSP_artefacts/Release/VST3/noclip.DSP.vst3"
-    subprocess.run(["lipo", "-verify_arch", "arm64", "x86_64", str(bundle / "Contents/MacOS/noclip.DSP")], check=True)
+    subprocess.run(["lipo", str(bundle / "Contents/MacOS/noclip.DSP"), "-verify_arch", "arm64", "x86_64"], check=True)
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
     output = ROOT / "build-macos-release"
     output.mkdir(exist_ok=True)

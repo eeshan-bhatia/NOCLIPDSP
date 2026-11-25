@@ -80,7 +80,7 @@ jobs:
           validator="$(find .tools/pluginval -path '*/Contents/MacOS/pluginval' -type f -print -quit)"
           test -n "$validator"
           bundle="$PWD/build-macos/noclip.DSP_artefacts/Release/VST3/noclip.DSP.vst3"
-          lipo -verify_arch arm64 x86_64 "$bundle/Contents/MacOS/noclip.DSP"
+          lipo "$bundle/Contents/MacOS/noclip.DSP" -verify_arch arm64 x86_64
           codesign --force --sign - "$bundle"
           codesign --verify --deep --strict --verbose=2 "$bundle"
           for architecture in arm64 x86_64; do
