@@ -1,12 +1,12 @@
 # noclip.DSP
 
 A C++20/JUCE clipper and waveshaper for masters, aggressive drums and 808s.
-**0.6.0 is a development build.** Windows VST3 and standalone; AGPLv3.
+**0.6.0 is a development build.** Windows and macOS VST3; AGPLv3.
 
 ## Download and install
 
 Download the **Windows-x64-VST3.zip** asset from
-[GitHub Releases](https://github.com/eeshan-bhatia/NOCLIPDSP/releases).
+[the Windows prerelease](https://github.com/eeshan-bhatia/NOCLIPDSP/releases/tag/v0.6.0).
 Users do not need this repository or the source archive.
 
 Close your DAW, extract the ZIP, and copy the entire `noclip.DSP.vst3` folder to
@@ -14,6 +14,18 @@ Close your DAW, extract the ZIP, and copy the entire `noclip.DSP.vst3` folder to
 Replace the old bundle when updating; do not copy only the binary inside it.
 The ZIP includes installation instructions and a runtime download link if needed.
 Requires Windows 10/11 x64 and a 64-bit VST3 host.
+
+For macOS, use the **macOS-Universal-VST3.zip** asset from the
+[macOS prerelease](https://github.com/eeshan-bhatia/NOCLIPDSP/releases/tag/v0.6.0-macos).
+Close the DAW, extract the ZIP and copy the whole `noclip.DSP.vst3` bundle to
+`~/Library/Audio/Plug-Ins/VST3/`, then rescan. It contains Apple Silicon and Intel
+code, with a macOS 11 deployment target. Tests run on macOS 15; older macOS
+versions and real Mac DAW sessions still need verification.
+
+The macOS prerelease is ad-hoc signed, not Developer ID signed or notarized;
+macOS may block it or require security approval. See
+[Apple's guidance](https://support.apple.com/en-us/102445).
+This is VST3, not Audio Unit, so Logic Pro cannot load it.
 
 ## Five independent sections
 

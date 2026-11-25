@@ -1,4 +1,6 @@
-# Building on Windows
+# Building
+
+## Windows prerequisites
 
 Production targets require Visual Studio 2022+ C++ desktop tools, an actual
 Windows 10/11 SDK, CMake >=3.22 (new enough for your VS version), Git and C++20.
@@ -87,3 +89,23 @@ to the release matching the packaged version and source commit.
 
 Only the VST3 ZIP is needed to install the plugin. Keep the source archive
 available alongside it. Build outputs and release archives remain ignored.
+
+## macOS universal build
+
+Install Xcode and CMake. To build for Apple Silicon and Intel:
+
+```sh
+cmake -S . -B build-macos -G Xcode '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+cmake --build build-macos --config Release --parallel 3
+ctest --test-dir build-macos -C Release --output-on-failure
+```
+
+The `macOS prerelease build` GitHub Actions workflow fetches the pinned build
+inputs, builds both architectures, runs the four suites natively and under
+Rosetta, and validates VST3 loading with pluginval level 5. It produces plugin
+and corresponding-source ZIPs plus checksums as a workflow artifact. Publication
+is a separate step after reviewing the successful run.
+
+`scripts/Package-MacOS.py` packages the workflow's `build-macos` output and verifies
+the extracted bundle's ad-hoc signature. Developer ID signing and notarization
+require Apple developer credentials and are not performed by this workflow.

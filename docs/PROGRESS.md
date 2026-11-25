@@ -1,6 +1,6 @@
 # Current release: 0.6.0
 
-Updated 2026-11-24. Product: noclip.DSP, Windows VST3 and standalone.
+Updated 2026-11-25. Product: noclip.DSP, Windows and macOS VST3.
 
 ## Implemented processing
 
@@ -24,6 +24,16 @@ previous states; see [workflow](WAVESHAPER_WORKFLOW.md) for compatibility limits
 Release VST3 and standalone built on 2026-11-24. All four CTest suites passed;
 pluginval strictness level 5 reported SUCCESS. Tests cover DSP, clipping, curves,
 state migration, crossovers, comparison, latency and allocation-free processing.
+
+macOS universal prerelease published on 2026-11-25. Both arm64 and x86_64 builds
+passed all four suites and pluginval strictness level 5, with Intel execution
+under Rosetta on macOS 15. The extracted ZIP passed signature verification.
+Saved-state numeric parsing was made portable to Apple's C++ library; continuous
+parameter tests allow tight rounding tolerances. No DSP algorithms were changed.
+
+The Mac package targets macOS 11+, but older systems, physical Intel hardware and
+real Mac DAW sessions remain unverified. It is ad-hoc signed, not Developer ID
+signed or notarized. See [macOS prerelease](https://github.com/eeshan-bhatia/NOCLIPDSP/releases/tag/v0.6.0-macos).
 
 A 9 kHz clipping test measured about 47.4 dB reduction of the selected 21 kHz
 alias at 8x versus 1x. See [measurements](PHASE34.md) and [testing](TESTING.md)
