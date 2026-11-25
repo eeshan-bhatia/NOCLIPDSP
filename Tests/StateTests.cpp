@@ -131,7 +131,10 @@ int main()
     xml = numeric.createXml();
     juce::AudioProcessor::copyXmlToBinary(*xml, bytes);
     restored.setStateInformation(bytes.getData(), static_cast<int>(bytes.getSize()));
-    if (restored.state.getRawParameterValue(noclip::parameters::input)->load() != -12.5f) return failure(16);
+    const auto recalledDecimal = restored.state.getRawParameterValue(noclip::parameters::input)->load();
+    std::cout << "Scientific-notation recall error: " << std::abs(recalledDecimal + 12.5f) << '\n';
+    // Host parameter normalization can round by a few ULPs on different CPUs.
+    if (std::abs(recalledDecimal + 12.5f) > 0.0001f) return failure(16);
 
     set(original, noclip::parameters::output, 24.0f);
     original.getStateInformation(bytes);

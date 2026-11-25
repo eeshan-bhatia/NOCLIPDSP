@@ -1,6 +1,11 @@
 name: macOS prerelease build
 on:
   workflow_dispatch:
+    inputs:
+      reuse_build:
+        description: Optional source commit of a preserved build for incremental diagnostics
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -11,6 +16,14 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/cache/restore@v4
+        if: inputs.reuse_build != ''
+        with:
+          path: build-macos
+          key: macos-universal-build-${{ inputs.reuse_build }}
+          fail-on-cache-miss: true
       - name: Fetch pinned dependencies and release input
         shell: bash
         run: |
@@ -20,6 +33,19 @@ jobs:
           curl --fail --location --retry 3 -o .tools/source.zip https://github.com/eeshan-bhatia/NOCLIPDSP/releases/download/v0.6.0/noclip.DSP-0.6.0-Source.zip
           echo '6312bb0ed26b4d4e2c92ac5161c2d3c4dbe9e41d92c427b4ddbfb4707959631d  .tools/source.zip' | shasum -a 256 -c -
           unzip -p .tools/source.zip noclip.DSP-0.6.0-Source/release-inputs/cs_regular.ttf > .tools/cs_regular.ttf
+      - name: Restore source modification times for incremental diagnostics
+        if: inputs.reuse_build != ''
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, subprocess
+          for path in pathlib.Path('.tools').rglob('*'):
+              if path.is_file():
+                  os.utime(path, (946684800, 946684800))
+          for name in subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0'):
+              if name and pathlib.Path(name).is_file():
+                  stamp = int(subprocess.check_output(['git', 'log', '-1', '--format=%ct', '--', name]))
+                  os.utime(name, (stamp, stamp))
+          PY
       - name: Configure universal Release
         run: >-
           cmake -S . -B build-macos -G Xcode
