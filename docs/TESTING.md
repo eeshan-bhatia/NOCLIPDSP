@@ -51,3 +51,8 @@ clean 808 preservation. ProcessingTests covers all ten quality/ADAA combinations
 fixed 68-sample modular latency, unchanged disabled sections, exact host bypass,
 continuous automation and allocation-free callback execution. StateTests covers
 schema 7, ADAA snapshot recall and schema 6 migration with ADAA off.
+
+The 0.7.0 universal Mac build passed all five suites natively on Apple Silicon
+and under Intel/Rosetta, plus pluginval strictness 5 for both architectures.
+The packaged bundle passed signature validation after extraction. Evidence:
+[GitHub Actions run 45755951349](https://github.com/eeshan-bhatia/NOCLIPDSP/actions/runs/45755951349).

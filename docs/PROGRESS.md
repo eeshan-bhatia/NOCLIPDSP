@@ -44,6 +44,15 @@ for settings, reproduction commands and qualifications.
 FL Studio listening and real project reload remain unverified for this build.
 No production-mastering, true-peak or LUFS claim is made.
 
+## 0.7.0 macOS validation
+
+On 2026-11-26 the universal build passed all five suites on Apple Silicon and
+Intel under Rosetta, plus pluginval strictness 5 on both architectures.
+The packaged VST3 passed signature verification after extraction.
+[Successful workflow](https://github.com/eeshan-bhatia/NOCLIPDSP/actions/runs/45755951349).
+The 0.7.0 Windows and Mac packages are available as local build artifacts;
+published 0.6.0 release assets remain unchanged. Mac signing remains ad-hoc.
+
 ## Artifacts and publishing
 
 - build-native/noclip.DSP_artefacts/Release/Standalone/noclip.DSP.exe
