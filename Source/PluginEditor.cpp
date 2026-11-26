@@ -168,8 +168,15 @@ void NoclipEditor::paint(juce::Graphics &g)
     juce::DropShadow(look.glow.withAlpha(.9f), 12, {}).drawForPath(g, path);
     g.setColour(look.ink);
     g.fillPath(path);
-    g.setFont(look.font(13));
-    g.drawText("3 BAND WAVESHAPER WITH 808 FX", 112, 76, 460, 20, juce::Justification::centredLeft);
+    // Render 3-BAND with a plain dash; the supplied font maps '-' to artwork.
+    juce::GlyphArrangement subtitle;
+    subtitle.addFittedText(look.font(13), "3  BAND WAVESHAPER WITH 808 FX", 112, 76, 460, 20,
+                          juce::Justification::centredLeft, 1);
+    juce::Path subtitlePath;
+    subtitle.createPath(subtitlePath);
+    g.fillPath(subtitlePath);
+    g.drawLine(subtitle.getGlyph(0).getRight() + 1, subtitlePath.getBounds().getCentreY(),
+               subtitle.getGlyph(3).getLeft() - 1, subtitlePath.getBounds().getCentreY(), 1.2f);
     g.setColour(look.edge);
     g.drawHorizontalLine(380, 24.f, static_cast<float>(getWidth() - 24));
     const char *names[]{"IN", "OUT", "RMS", "CLIP"};

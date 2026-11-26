@@ -408,11 +408,11 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
     const float level = processor.lowEndPeak.load(std::memory_order_relaxed);
     const float db = 20 * std::log10(std::max(1e-6f, level));
     const float normal = std::clamp((db + 60) / 60, 0.f, 1.f);
-    const float meterX = graph.getRight() + 18, meterW = 18, meterTop = graph.getY() + 46,
-                meterHeight = graph.getHeight() - 48;
+    const float meterW = 18, meterTop = graph.getY() + 46, meterHeight = graph.getHeight() - 48;
     const bool godmode = db >= -3;
     const auto white = juce::Colours::white;
     const auto textBox = juce::Rectangle<float>(graph.getRight() + 3, graph.getY(), 76, 38);
+    const float meterX = textBox.getCentreX() - meterW / 2;
     auto tierPath = centredTextPath("GOD", 18, textBox.withHeight(19));
     tierPath.addPath(centredTextPath("MODE", 18, textBox.withTrimmedTop(19)));
     if (godmode)
@@ -430,11 +430,6 @@ void WorkspacePanel::drawBassScope(juce::Graphics &g)
         auto segment =
             juce::Rectangle<float>(meterX, meterTop + meterHeight - (i + 1) * segmentH, meterW, segmentH - 2);
         const bool lit = normal > static_cast<float>(i) / 20 || (i == 19 && godmode);
-        if (lit)
-        {
-            g.setColour(white.withAlpha(.13f));
-            g.fillRect(segment.expanded(3));
-        }
         g.setColour(lit ? white.withAlpha(.65f + .35f * static_cast<float>(i) / 19)
                         : look.sand.withAlpha(.12f));
         g.fillRect(segment);
