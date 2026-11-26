@@ -37,3 +37,8 @@ build*/
 .vs/
 *.user
 *.vst3/
+
+# Regression artifacts when tests are invoked from the repository root
+/workspace-*.png
+/oversampling-cpu.csv
+/oversampling-spectrum.csv

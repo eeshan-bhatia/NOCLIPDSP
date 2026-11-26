@@ -1,9 +1,9 @@
-# Parameters and schema 6
+# Parameters and schema 7
 
-168 APVTS parameters; 167 stored in each A/B slot, with abMatch global. The first
+169 APVTS parameters; 168 stored in each A/B slot, with abMatch global. The first
 44 IDs retain historical compatibility. Active shared controls: inputDb/outputDb
 (-48..24 dB), bypass, clipEnabled (global ACTIVE), ceilingDb (-24..0 dBFS), mix,
-quality (1/2/4/8x), dcFilter, symmetry and editSlot (CURVE 1/2). Legacy mode/routing
+quality (1/2/4/8/16x), adaa (bool, default off), dcFilter, symmetry and editSlot (CURVE 1/2). Legacy mode/routing
 and full-band nonlinear IDs no longer control the new shapers; states migrate.
 
 Each prefix master / low / mid / high has these suffixes:
@@ -32,7 +32,11 @@ and bassOutput (-24..12 dB, 0). abMatch defaults off.
 Curve ordinates are saved but are not host-automatable. Scalar DSP parameters
 are smoothed and automatable.
 
-Schema 6 validates exact IDs, ranges, discrete choices and both comparison slots
-before replacing anything. Root and active slot must agree. Schemas 1-5 migrate;
+Schema 7 validates exact IDs, ranges, discrete choices and both comparison slots
+before replacing anything. Root and active slot must agree. Schemas 1-6 migrate;
 sidechain data is validated then discarded. See WAVESHAPER_WORKFLOW.md for old
 808, exclusive routing and automation compatibility limits.
+
+Schema 7 adds ADAA to both snapshots. Earlier states load with ADAA off and retain
+their quality index. Quality automation uses a wider normalized range; review
+old host automation envelopes after upgrading.

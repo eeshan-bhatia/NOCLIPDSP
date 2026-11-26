@@ -83,7 +83,8 @@ class NoclipProcessor final : public juce::AudioProcessor, private juce::Thread
     std::unique_ptr<noclip::ComparisonEngine> engine;
     std::unique_ptr<std::array<noclip::CurveMailbox, 8>> mailboxes =
         std::make_unique<std::array<noclip::CurveMailbox, 8>>();
-    std::array<noclip::CurveTable, 8> pendingTables;
+    std::unique_ptr<std::array<noclip::CurveTable, 8>> pendingTables =
+        std::make_unique<std::array<noclip::CurveTable, 8>>();
     std::array<bool, 8> pending{};
     std::array<std::array<std::atomic<float>, noclip::parameters::snapshotCount>, 2> saved{};
     std::array<std::atomic<float> *, noclip::parameters::snapshotCount> raw{};

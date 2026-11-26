@@ -15,9 +15,9 @@ public:
     void setStageTable(int stage,const CurveTable& table,bool immediate=false) noexcept;
     void setTable(const CurveTable&) noexcept;
     int latency() const noexcept { return latencySamples; }
-    int activeQuality() const noexcept { return current; }
+    int activeQuality() const noexcept { return current % qualityCount; }
 private:
-    static constexpr int chunkSize = 256, delaySize = 4096;
+    static constexpr int qualityCount = 5, chunkSize = 256, delaySize = 4096;
     struct Delay
     {
         std::array<std::array<float,delaySize>,2> data {};
@@ -34,11 +34,12 @@ private:
     {
         std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
         AudioEngine engine;
-        Delay padding;
+        Delay padding, oversampledPadding;
         std::array<std::array<float,chunkSize>,2> work {};
-        int pad=0;
+        int pad=0, intrinsic=0, innerPad=0;
+        bool adaa=false;
     };
-    std::array<Bank,4> banks;
+    std::array<Bank,qualityCount*2> banks;
     Delay dryDelay;
     std::array<std::array<float,chunkSize>,2> input {};
     CurveTable latest=CurveTable::make();

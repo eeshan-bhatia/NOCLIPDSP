@@ -1,4 +1,4 @@
-# Architecture - 0.6.0
+# Architecture - 0.7.0
 
 The plugin enables ModularDSP within AudioEngine's common oversampled domain.
 It reuses clip(), CurveTable interpolation, AdvancedDSP's curve transitions and
@@ -12,7 +12,7 @@ SHAPE. Four independent LUT pairs retain custom curves. Bias/Asymmetry/Morph
 reuse AdvancedDSP. Global dry follows active crossover/808 phase. Wet DC filtering
 precedes global mix/output and ceiling.
 
-ProcessingChain preallocates four quality banks and pads them to 65 host samples.
+ProcessingChain preallocates ten banks (five oversampling ratios, with/without ADAA) and pads them to 68 host samples.
 Quality changes warm a bank then crossfade; each receives all latest stage tables.
 ModularDSP allocates on first prepare, never during processing/quality changes.
 No external sidechain bus, detector or controls remain.
@@ -26,5 +26,5 @@ points match the audio snapshot. Prepare synchronously installs all tables.
 Audio attempts one bounded parameter read and retains the previous snapshot on
 transaction overlap. State transactions use a mutex outside the audio callback.
 
-Schema 6 stores both complete configurations. Legacy IDs remain for
+Schema 7 stores both complete configurations. Legacy IDs remain for
 validation and migration.

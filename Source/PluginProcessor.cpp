@@ -147,6 +147,7 @@ noclip::ComparisonSettings NoclipProcessor::decode(const Snapshot &v) noexcept
     a.splitHz = v[18];
     a.bassOutput = v[19];
     p.modular.active = true;
+    p.modular.adaa = v[167] > .5f;
     p.modular.lowHz = v[164];
     p.modular.highHz = v[165];
     p.modular.bass = v[166] > .5f;
@@ -239,9 +240,9 @@ void NoclipProcessor::processAudio(juce::AudioBuffer<float> &buffer, juce::MidiB
         {
             const size_t index = slot * 4 + static_cast<size_t>(stage),
                          base = 44 + static_cast<size_t>(stage) * 30 + 12;
-            if ((*mailboxes)[index].consume(pendingTables[index]))
+            if ((*mailboxes)[index].consume((*pendingTables)[index]))
                 pending[index] = true;
-            const auto &table = pendingTables[index];
+            const auto &table = (*pendingTables)[index];
             if (pending[index])
             {
                 bool valid = true;
@@ -302,7 +303,7 @@ void NoclipProcessor::getStateInformation(juce::MemoryBlock &destination)
 {
     const juce::ScopedLock lock(snapshotLock);
     auto tree = state.copyState();
-    tree.setProperty("version", 6, nullptr);
+    tree.setProperty("version", 7, nullptr);
     juce::ValueTree comparison("COMPARE");
     comparison.setProperty("active", selected.load(), nullptr);
     const auto ids = noclip::parameters::allIds();
@@ -337,9 +338,10 @@ void NoclipProcessor::setStateInformation(const void *data, int size)
         return;
     auto tree = juce::ValueTree::fromXml(*xml);
     const int version = static_cast<int>(tree.getProperty("version", 0));
-    if (!tree.hasType("NOCLIPDSP_STATE") || version < 1 || version > 6)
+    if (!tree.hasType("NOCLIPDSP_STATE") || version < 1 || version > 7)
         return;
-    auto names = version == 6 ? noclip::parameters::allIds() : noclip::parameters::legacyIds();
+    auto names = version >= 6 ? noclip::parameters::allIds() : noclip::parameters::legacyIds();
+    if (version == 6) names.removeString("adaa");
     if (version == 1)
         while (names.size() > 3)
             names.remove(names.size() - 1);
@@ -400,6 +402,7 @@ void NoclipProcessor::setStateInformation(const void *data, int size)
                                 lo = spec.min;
                                 hi = spec.max;
                             }
+                    if (version < 7 && id == "quality") hi = 3;
                     if (version == 3 && id == "routing")
                         hi = 2;
                     if (id == "scSensitivity")
@@ -519,7 +522,7 @@ void NoclipProcessor::setStateInformation(const void *data, int size)
             snapshots[slot][i] = static_cast<float>(
                 bank.getChildWithProperty("id", all[static_cast<int>(i)]).getProperty("value"));
     }
-    tree.setProperty("version", 6, nullptr);
+    tree.setProperty("version", 7, nullptr);
     const juce::ScopedLock lock(snapshotLock);
     revision.fetch_add(1);
     store(0, snapshots[0]);

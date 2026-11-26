@@ -69,7 +69,7 @@ jobs:
             sudo softwareupdate --install-rosetta --agree-to-license
           fi
           cd build-macos
-          for test in DSPTests ClipperTests AdvancedTests StateTests; do
+          for test in DSPTests ClipperTests AdvancedTests AntiderivativeTests StateTests; do
             arch -x86_64 "Release/$test"
           done
       - name: Validate VST3 on both architectures

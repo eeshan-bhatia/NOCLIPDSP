@@ -1,7 +1,7 @@
 # noclip.DSP
 
 A C++20/JUCE clipper and waveshaper for masters, aggressive drums and 808s.
-**0.6.0 is a development build.** Windows and macOS VST3; AGPLv3.
+**0.7.0 is the current development build.** Published downloads below are 0.6.0. Windows and macOS VST3; AGPLv3.
 
 ## Download and install
 
@@ -43,7 +43,7 @@ points, symmetry, inversion, presets, two curve endpoints and morph are retained
 independently for every section.
 
 808 provides Sub Preserve, Harmonics, Drive, Punch, Split and Output.
-Oversampling, whole-plugin A/B and attenuation-only
+1x/2x/4x/8x/16x oversampling, optional first-order ADAA, whole-plugin A/B and attenuation-only
 RMS matching remain shared. **External sidechain has been removed.**
 
 See [workflow and state notes](docs/WAVESHAPER_WORKFLOW.md),
@@ -68,9 +68,11 @@ Outputs: `build/noclip.DSP_artefacts/Release/Standalone/noclip.DSP.exe` and
 whole VST3 bundle and rescan. Avoid installing both old and current bundles with
 the same plugin ID. Native setup and pluginval: [BUILDING](docs/BUILDING.md).
 
+See [ADAA and oversampling](docs/ANTIALIASING.md) for quality settings, latency and compatibility.
+
 ## Validation and limits
 
-Four CTest suites cover clipping, curve publication, state migration, independent
+Five CTest suites cover clipping, curve publication, state migration, independent
 band shaping, latency, alias reduction, crossovers,
 808 equivalence and allocation-free processing/quality changes.
 Pluginval strictness level 5 checks the host-facing plugin.
@@ -88,7 +90,7 @@ output gain/ceiling still affect it. No LUFS, true-peak or dynamic limiter is cl
 approximation, not perceptual loudness normalization. FL Studio listening/project recall is not yet
 validated by this build's automated tests.
 
-Schema 6 saves every section and both whole-plugin snapshots. Earlier states
+Schema 7 saves every section and both whole-plugin snapshots. Earlier states
 migrate with the compatibility limits described in WAVESHAPER_WORKFLOW.md. Output now spans -48..+24 dB; review Output automation from older
 -48..+12 dB builds because normalized mappings changed.
 

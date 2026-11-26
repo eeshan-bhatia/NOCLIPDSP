@@ -28,7 +28,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
                                                             juce::StringArray{"FULL BAND", "808"}, 0));
     layout.add(std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{"quality", 1}, "Oversampling",
-        juce::StringArray{"1X CREATIVE", "2X ECO", "4X NORMAL", "8X HIGH"}, 2));
+        juce::StringArray{"1X CREATIVE", "2X ECO", "4X NORMAL", "8X HIGH", "16X ULTRA"}, 2));
     layout.add(
         std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"dcFilter", 1}, "DC filter", true));
     layout.add(
@@ -70,6 +70,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
                                                           false));
     layout.add(
         std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"abMatch", 1}, "A/B RMS match", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"adaa", 1}, "Antiderivative anti-aliasing", false));
     return layout;
 }
 } // namespace noclip::parameters

@@ -1,5 +1,6 @@
 """Package the validated universal macOS VST3 and corresponding source."""
 import hashlib
+import re
 import importlib.util
 import shutil
 import subprocess
@@ -15,6 +16,7 @@ spec.loader.exec_module(packaging)
 def main():
     if packaging.git(ROOT, "status", "--porcelain", "--untracked-files=no").strip():
         raise SystemExit("Commit tracked changes before packaging.")
+    version = re.search(r"project\(noclip\.DSP VERSION ([\d.]+)", (ROOT / "CMakeLists.txt").read_text()).group(1)
     revision = packaging.git(ROOT, "rev-parse", "HEAD").decode().strip()
     juce = ROOT / ".tools/JUCE"
     if packaging.git(juce, "rev-parse", "HEAD").decode().strip() != packaging.JUCE_REVISION:
@@ -36,7 +38,7 @@ Counter-Strike Regular by SoJa: separate third-party asset supplied by the proje
 owner, who confirmed redistribution permission for the release.
 """
     (stage / "THIRD-PARTY-NOTICES.txt").write_text(notices)
-    (stage / "INSTALL.txt").write_text(f"""noclip.DSP 0.6.0 - macOS universal VST3 prerelease
+    (stage / "INSTALL.txt").write_text(f"""noclip.DSP {version} - macOS universal VST3 prerelease
 Apple Silicon and Intel. Deployment target: macOS 11 or later.
 
 1. Close your DAW and extract the ZIP.
@@ -58,14 +60,14 @@ is not guaranteed. Do not disable system-wide security protections.
 Tests run on Apple Silicon and Intel via Rosetta; real Mac DAW listening and
 project recall, and execution on macOS 11, are not yet verified.
 Source revision: {revision}
-Corresponding source: noclip.DSP-0.6.0-macOS-Source.zip on
-https://github.com/eeshan-bhatia/NOCLIPDSP/releases/tag/v0.6.0-macos
+Corresponding source: noclip.DSP-{version}-macOS-Source.zip on
+https://github.com/eeshan-bhatia/NOCLIPDSP/releases/tag/v{version}-macos
 License and third-party notices are included.
 """)
-    plugin_zip = output / "noclip.DSP-0.6.0-macOS-Universal-VST3.zip"
+    plugin_zip = output / f"noclip.DSP-{version}-macOS-Universal-VST3.zip"
     subprocess.run(["ditto", "-c", "-k", "--sequesterRsrc", str(stage), str(plugin_zip)], check=True)
-    source_zip = output / "noclip.DSP-0.6.0-macOS-Source.zip"
-    prefix = "noclip.DSP-0.6.0-macOS-Source/"
+    source_zip = output / f"noclip.DSP-{version}-macOS-Source.zip"
+    prefix = f"noclip.DSP-{version}-macOS-Source/"
     with zipfile.ZipFile(source_zip, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         packaging.add_repository(archive, ROOT, prefix)
         packaging.add_repository(archive, juce, prefix + "third_party/JUCE/")

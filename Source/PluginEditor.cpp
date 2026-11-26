@@ -21,8 +21,8 @@ NoclipEditor::NoclipEditor(NoclipProcessor &p) : AudioProcessorEditor(p), proces
             std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(p.state, id, enabled[i]);
         enabled[i].setTooltip("Enable this processor. Viewing a tab never changes audio.");
     }
-    for (auto *c : std::array<juce::Component *, 10>{&a, &b, &copyAB, &copyBA, &match, &bypass, &active, &dc,
-                                                     &quality, &status})
+    for (auto *c : std::array<juce::Component *, 11>{&a, &b, &copyAB, &copyBA, &match, &bypass, &active, &dc,
+                                                     &quality, &status, &adaa})
     {
         c->setName("compact");
         addAndMakeVisible(c);
@@ -31,11 +31,11 @@ NoclipEditor::NoclipEditor(NoclipProcessor &p) : AudioProcessorEditor(p), proces
     b.onClick = [this] { processor.selectSnapshot(1); };
     copyAB.onClick = [this] { processor.copySnapshot(0, 1); };
     copyBA.onClick = [this] { processor.copySnapshot(1, 0); };
-    for (auto pair : std::array<std::pair<const char *, juce::ToggleButton *>, 4>{
-             {{"abMatch", &match}, {"bypass", &bypass}, {"clipEnabled", &active}, {"dcFilter", &dc}}})
+    for (auto pair : std::array<std::pair<const char *, juce::ToggleButton *>, 5>{
+             {{"abMatch", &match}, {"bypass", &bypass}, {"clipEnabled", &active}, {"dcFilter", &dc}, {"adaa", &adaa}}})
         buttons.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
             p.state, pair.first, *pair.second));
-    quality.addItemList({"1X CREATIVE", "2X ECO", "4X NORMAL", "8X HIGH"}, 1);
+    quality.addItemList({"1X CREATIVE", "2X ECO", "4X NORMAL", "8X HIGH", "16X ULTRA"}, 1);
     qualityAttachment =
         std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(p.state, "quality", quality);
     const char *ids[]{"inputDb", "outputDb", "ceilingDb", "mix", "bandLowHz", "bandHighHz"};
@@ -68,6 +68,7 @@ NoclipEditor::NoclipEditor(NoclipProcessor &p) : AudioProcessorEditor(p), proces
     knobs[5].setTooltip("Mid/high crossover. Disabled bands pass through; they are not muted.");
     match.setTooltip(
         "Compare whole configurations using attenuation-only RMS matching. Allow a few seconds to settle.");
+    adaa.setTooltip("First-order antiderivative anti-aliasing. Best combined with 2x or higher oversampling; 1x softens high frequencies. Adds CPU load.");
     setResizable(true, true);
     setResizeLimits(1000, 900, 1500, 1200);
     setSize(1100, 950);
@@ -129,6 +130,7 @@ void NoclipEditor::resized()
     bypass.setBounds(w - 140, 30, 115, 28);
     quality.setBounds(w - 260, 65, 235, 28);
     dc.setBounds(w - 405, 65, 135, 28);
+    adaa.setBounds(w - 515, 65, 100, 28);
     const int tw = (w - 48) / 5;
     for (int i = 0; i < 5; ++i)
     {

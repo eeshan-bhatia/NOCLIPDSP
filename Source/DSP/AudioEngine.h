@@ -57,6 +57,8 @@ private:
     std::array<Ramp, curveCount> curves;
     AdvancedDSP advanced;
     std::unique_ptr<ModularDSP> modular;
-    bool useModular=false;
+    bool useModular=false, antialiased=false;
+    std::array<std::array<double,3>,2> linearDelay {};
+    int linearPosition=0;
 };
 }

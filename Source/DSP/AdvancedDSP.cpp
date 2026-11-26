@@ -9,7 +9,7 @@ float gain(float v) noexcept { return std::pow(10.0f, v*.05f); }
 void AdvancedDSP::prepare(double rate, AdvancedParameters p)
 {
     if(!std::isfinite(rate)) rate=48000;
-    sampleRate=std::clamp(rate, 1000.0, 1536000.0);
+    sampleRate=std::clamp(rate, 1000.0, 3072000.0);
     for(auto& c:controls) c.prepare(sampleRate,0);
     for(auto& band:bands) for(auto& c:band) c.prepare(sampleRate,0);
     tableBlend.prepare(sampleRate,1);
@@ -20,6 +20,11 @@ void AdvancedDSP::prepare(double rate, AdvancedParameters p)
     for(auto& c:bassClean) c.reset();
     for(auto& c:bassDirty) c.reset();
     dcX={}; dcY={}; fast={}; slow={};
+    antialiased = p.adaa;
+    for (auto& path : antiderivatives) for (auto& state : path) state.reset();
+    for (auto& path : alignedInputs) for (auto& state : path) state.reset();
+    for (auto& f : bassAligned) f.reset();
+    for (auto& f : bassFiltered) f.reset();
     dcPole=std::exp(-2*std::numbers::pi*10/sampleRate);
     fastPole=std::exp(-1/(sampleRate*.001)); slowPole=std::exp(-1/(sampleRate*.03));
 }
@@ -54,6 +59,7 @@ void AdvancedDSP::setTable(const CurveTable& next, bool immediate) noexcept
         previous.a[i] += tableBlend.current*(table.a[i]-previous.a[i]);
         previous.b[i] += tableBlend.current*(table.b[i]-previous.b[i]);
     }
+    previous.rebuildIntegrals();
     table=next; tableBlend.prepare(sampleRate,0); tableBlend.set(1);
 }
 void AdvancedDSP::advance(double linkedAmplitude) noexcept
@@ -79,13 +85,41 @@ double AdvancedDSP::transfer(double x, float t, float s, float k,
     const double shaped=t*(evaluate(previous)*(1-tableBlend.current)+evaluate(table)*tableBlend.current);
     return classic*(1-v[custom])+v[custom]*shaped;
 }
+double AdvancedDSP::transferIntegral(double x, float t, float s, float k,
+    const std::array<float, curveCount>& weights, float sum) const noexcept
+{
+    const double shifted = x + v[bias] * t;
+    const double scale = shifted >= 0 ? 1 + .75 * v[asym] : 1 - .75 * v[asym];
+    const double z = shifted * scale;
+    double classic = 0;
+    if (v[custom] < 1)
+        for (int j = 0; j < curveCount; ++j) if (weights[j] > 0)
+            classic += weights[j] * clipIntegral(z, t, s, k, static_cast<Curve>(j)) / std::max(1.e-6f, sum);
+    if (v[custom] <= 0) return classic / scale;
+    const auto evaluate = [&](const CurveTable& c)
+    {
+        const double a = CurveTable::integral(c.a, c.integralA, z / t) - CurveTable::integral(c.a, c.integralA, 0);
+        const double b = CurveTable::integral(c.b, c.integralB, z / t) - CurveTable::integral(c.b, c.integralB, 0);
+        return a * (1 - v[morph]) + b * v[morph];
+    };
+    const double shaped = t * t * (evaluate(previous) * (1-tableBlend.current) + evaluate(table) * tableBlend.current);
+    return (classic * (1-v[custom]) + shaped * v[custom]) / scale;
+}
+double AdvancedDSP::filteredTransfer(size_t path, size_t channel, double x, float t, float s, float k,
+    const std::array<float, curveCount>& weights, float sum) noexcept
+{
+    if (!antialiased) return transfer(x,t,s,k,weights,sum);
+    return antiderivatives[path][channel].process(x,
+        [&](double value) { return transfer(value,t,s,k,weights,sum); },
+        [&](double value) { return transferIntegral(value,t,s,k,weights,sum); });
+}
 std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t,float s,float k,
     const std::array<float,curveCount>& weights,float sum) noexcept
 {
     const auto ch=static_cast<size_t>(channel);
     double wet=0, aligned=0, activity=0;
     const double relievedDrive=std::max(1.0,static_cast<double>(d));
-    if(v[full]>0) { wet=v[full]*transfer(dry*relievedDrive,t,s,k,weights,sum); aligned=v[full]*dry; if(std::abs(dry*relievedDrive)>t) activity=v[full]; }
+    if(v[full]>0) { wet=v[full]*filteredTransfer(0,ch,dry*relievedDrive,t,s,k,weights,sum); aligned=v[full]*(antialiased?alignedInputs[0][ch].process(dry):dry); if(std::abs(dry*relievedDrive)>t) activity=v[full]; }
     if(v[multi]>0)
     {
         const auto parts=crossovers[ch].process(dry,v[lowG],v[highG]);
@@ -94,7 +128,7 @@ std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t
         {
             const auto& b=bandValues[i];
             const double bandDrive=std::max(1.0,static_cast<double>(d)*b[0]);
-            const double shaped= b[4]>0 ? transfer(parts[i]*bandDrive,t,b[1],k,weights,sum) : parts[i];
+            const double shaped= b[4]>0 ? filteredTransfer(i+1,ch,parts[i]*bandDrive,t,b[1],k,weights,sum) : parts[i];
             const double mixed=(parts[i]*(1-b[3])+shaped*b[3])*b[2];
             processed+=parts[i]*(1-b[4])+mixed*b[4];
             if(std::abs(parts[i]*bandDrive)>t) activity=std::max(activity,static_cast<double>(v[multi]*b[4]));
@@ -105,9 +139,11 @@ std::array<double,3> AdvancedDSP::process(int channel,double dry,float d,float t
     {
         const double attack=std::clamp((fast[0]-slow[0])/(fast[0]+1e-9),0.0,1.0);
         const double bassGain=1+(v[bassDrive]-1)*(1-v[punch]*attack);
-        const auto clean=bassClean[ch].process(dry,v[splitG]);
+        const auto clean=bassClean[ch].process(antialiased?bassAligned[ch].process(dry):dry,v[splitG]);
         const double dirtyDrive=std::max(1.0,static_cast<double>(d)*bassGain);
-        const auto dirty=bassDirty[ch].process(transfer(dry*dirtyDrive,t,s,k,weights,sum),v[splitG]);
+        double distorted=filteredTransfer(4,ch,dry*dirtyDrive,t,s,k,weights,sum);
+        if (antialiased) distorted=bassFiltered[ch].process(distorted);
+        const auto dirty=bassDirty[ch].process(distorted,v[splitG]);
         wet+=v[bass]*v[bassOutput]*(clean[0]*v[sub]+dirty[0]*(1-v[sub])
                                   +clean[1]*(1-v[harmonics])+dirty[1]*v[harmonics]);
         aligned+=v[bass]*(clean[0]+clean[1]);

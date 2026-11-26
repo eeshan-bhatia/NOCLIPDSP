@@ -18,7 +18,7 @@ waits for the validator and reports its actual exit code.
 - DSPTests: gain ramps, bypass, stereo/partition invariance, +24 dB output.
 - ClipperTests: built-in curves, bounds, continuity, soft/hard morph, ceiling/mix, sample rates/buffer sizes and standard allocation checks.
 - AdvancedTests: bounded curves, audio effects, A/B morph, threaded mailbox integrity, DC rejection, LR reconstruction magnitude/phase, independent band research, harmonics/sub preservation and synthetic pitched/decaying 808 punch.
-- StateTests + ProcessingTests + ComparisonTests: parameter/curve recall, invalid state rejection, schema 1/2/3/4 migration, mono/stereo buses, 1x/2x/4x/8x latency and spectra, exact delayed bypass, quality/routing automation and callback allocation checks.
+- StateTests + ProcessingTests + ComparisonTests: parameter/curve recall, invalid state rejection, schema 1/2/3/4 migration, mono/stereo buses, 1x/2x/4x/8x/16x latency and spectra, exact delayed bypass, quality/routing automation and callback allocation checks.
 
 The Phase 3/focused Phase 4 suites pass locally. Reproduce measurements with CTest
 rather than treating checked-in evidence as a substitute for running the tests.
@@ -42,3 +42,12 @@ and isolated-808 equivalence. Allocation checks include modular quality switchin
 and A/B.
 
 FL Studio listening and real project reload remain unverified for this build.
+
+## 0.7.0
+
+AntiderivativeTests checks analytical primitives, integrated custom tables,
+near-equal input stability, a selected folded harmonic, delay alignment and
+clean 808 preservation. ProcessingTests covers all ten quality/ADAA combinations,
+fixed 68-sample modular latency, unchanged disabled sections, exact host bypass,
+continuous automation and allocation-free callback execution. StateTests covers
+schema 7, ADAA snapshot recall and schema 6 migration with ADAA off.

@@ -92,7 +92,7 @@ inline constexpr std::array<FloatSpec, 12> stageSpecs{{{"Enabled", "Enabled", ""
                                                        {"Asymmetry", "Asymmetry", "", -1, 1, 0},
                                                        {"Morph", "Morph", "", 0, 1, 0},
                                                        {"Mix", "Stage mix", "", 0, 1, 1}}};
-inline constexpr size_t stageStride = 30, stageStart = 44, snapshotCount = 167;
+inline constexpr size_t stageStride = 30, stageStart = 44, snapshotCount = 168;
 inline juce::String stageId(int stage, const juce::String &suffix)
 {
     return juce::String(stagePrefixes[static_cast<size_t>(stage)]) + suffix;
@@ -126,6 +126,7 @@ inline juce::StringArray allIds()
     result.add("bandLowHz");
     result.add("bandHighHz");
     result.add("bassEnabled");
+    result.add("adaa");
     result.add("abMatch");
     return result;
 }

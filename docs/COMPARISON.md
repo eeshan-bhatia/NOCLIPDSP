@@ -14,7 +14,7 @@ remain. MATCH is global and unchanged when switching A/B.
 
 Normally only the audible chain runs; switches warm the other then crossfade for
 20 ms. MATCH runs both continuously and increases CPU. All paths keep fixed
-65-sample latency. Settled host bypass returns delayed raw audio without trim.
+68-sample latency. Settled host bypass returns delayed raw audio without trim.
 The saved plugin BYPASS can itself be compared and attenuated by MATCH.
 
 External sidechain routing and controls were removed in 0.6.0.

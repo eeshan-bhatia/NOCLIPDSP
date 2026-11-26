@@ -27,7 +27,7 @@ class NoclipEditor final : public juce::AudioProcessorEditor, private juce::Time
     std::array<juce::ToggleButton, 5> enabled;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>, 5> enableAttachments;
     juce::TextButton a{"A"}, b{"B"}, copyAB{"A TO B"}, copyBA{"B TO A"};
-    juce::ToggleButton match{"RMS MATCH"}, bypass{"BYPASS"}, active{"ACTIVE"}, dc{"DC FILTER"};
+    juce::ToggleButton match{"RMS MATCH"}, bypass{"BYPASS"}, active{"ACTIVE"}, dc{"DC FILTER"}, adaa{"ADAA"};
     juce::ComboBox quality;
     juce::Label status;
     std::array<juce::Slider, 6> knobs;

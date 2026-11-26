@@ -13,6 +13,27 @@ struct CurveTable
     static constexpr size_t size = 2049;
     std::array<float, size> a {}, b {};
     CurvePoints sourceA=identityPoints, sourceB=identityPoints;
+    std::array<double, size> integralA {}, integralB {};
+    void rebuildIntegrals() noexcept
+    {
+        integralA[0] = integralB[0] = 0;
+        for (size_t i = 1; i < size; ++i)
+        {
+            integralA[i] = integralA[i-1] + (static_cast<double>(a[i-1]) + a[i]) / (size-1);
+            integralB[i] = integralB[i-1] + (static_cast<double>(b[i-1]) + b[i]) / (size-1);
+        }
+    }
+    static double integral(const std::array<float, size>& values,
+                           const std::array<double, size>& sums, double x) noexcept
+    {
+        if (x <= -1) return (x + 1) * values.front();
+        if (x >= 1) return sums.back() + (x - 1) * values.back();
+        constexpr double step = 2.0 / (size - 1);
+        const double position = (x + 1) / step;
+        const auto i = std::min(size - 2, static_cast<size_t>(position));
+        const double fraction = position - static_cast<double>(i);
+        return sums[i] + step * fraction * (values[i] + .5 * fraction * (values[i+1] - values[i]));
+    }
     static std::array<float, size> build(CurvePoints points) noexcept
     {
         for (auto& p : points) p = std::isfinite(p) ? std::clamp(p, -1.0f, 1.0f) : 0;
@@ -36,7 +57,11 @@ struct CurveTable
         return result;
     }
     static CurveTable make(CurvePoints aPoints = identityPoints, CurvePoints bPoints = identityPoints) noexcept
-    { return { build(aPoints), build(bPoints), aPoints, bPoints }; }
+    {
+        CurveTable result { build(aPoints), build(bPoints), aPoints, bPoints };
+        result.rebuildIntegrals();
+        return result;
+    }
     static float evaluate(const std::array<float, size>& table, double x) noexcept
     {
         if(!std::isfinite(x)) return 0;

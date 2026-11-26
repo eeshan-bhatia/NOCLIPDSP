@@ -283,7 +283,7 @@ int comparisonTests()
     params.modular.active = true;
     params.modular.stages[1].enabled = true;
     params.modular.stages[1].drive = 24;
-    noclip::AudioEngine low, identity;
+    auto lowStorage = std::make_unique<noclip::AudioEngine>(); auto& low = *lowStorage; auto identityStorage = std::make_unique<noclip::AudioEngine>(); auto& identity = *identityStorage;
     low.prepare(48000, params);
     params.modular.stages[1].drive = 0;
     params.modular.stages[1].clip = false;
@@ -316,7 +316,7 @@ int comparisonTests()
     oldBass.advanced.bassDrive = 18;
     oldBass.advanced.punch = .5f;
     oldBass.advanced.sub = .8f;
-    noclip::AudioEngine old808, new808;
+    auto old808Storage = std::make_unique<noclip::AudioEngine>(); auto& old808 = *old808Storage; auto new808Storage = std::make_unique<noclip::AudioEngine>(); auto& new808 = *new808Storage;
     old808.prepare(48000, oldBass);
     auto newBass = oldBass;
     newBass.modular.active = true;
@@ -365,7 +365,7 @@ int comparisonTests()
     params.modular.stages[2].enabled = true;
     params.modular.stages[2].custom = true;
     params.modular.bass = true;
-    noclip::AudioEngine whole, partitioned;
+    auto wholeStorage = std::make_unique<noclip::AudioEngine>(); auto& whole = *wholeStorage; auto partitionedStorage = std::make_unique<noclip::AudioEngine>(); auto& partitioned = *partitionedStorage;
     whole.prepare(48000, params);
     partitioned.prepare(48000, params);
     std::array<float, 4096> one, two;
@@ -399,7 +399,7 @@ int comparisonTests()
         stage.asymmetry = -.35f;
         stage.morph = .65f;
         stage.mix = .4f;
-        noclip::AudioEngine actual;
+        auto actualStorage = std::make_unique<noclip::AudioEngine>(); auto& actual = *actualStorage;
         actual.prepare(48000, previewParameters);
         auto folded = noclip::identityPoints;
         for (auto &point : folded)

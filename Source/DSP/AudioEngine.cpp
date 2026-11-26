@@ -31,7 +31,7 @@ float dbToGain(float db) noexcept
 void Ramp::prepare(double sampleRate) noexcept
 {
     if (!std::isfinite(sampleRate)) sampleRate = 48000.0;
-    length = std::max(1, static_cast<int>(std::clamp(sampleRate, 1000.0, 1536000.0) * 0.02));
+    length = std::max(1, static_cast<int>(std::clamp(sampleRate, 1000.0, 3072000.0) * 0.02));
 }
 void Ramp::reset(float value) noexcept
 {
@@ -57,6 +57,8 @@ void AudioEngine::prepare(double sampleRate, Parameters p) noexcept
     p = sanitise(p);
     advanced.prepare(sampleRate, p.advanced);
     useModular=p.modular.active;
+    antialiased=useModular && p.modular.adaa;
+    linearDelay={}; linearPosition=0;
     if(useModular) { if(!modular) modular=std::make_unique<ModularDSP>(); modular->prepare(sampleRate,p.modular,p.advanced); }
     for (auto* r : { &input, &output, &active, &enabled, &drive, &threshold, &shape, &knee, &ceiling, &mix })
         r->prepare(sampleRate);
@@ -109,9 +111,15 @@ MeterFrame AudioEngine::process(float* const* channels, int channelCount, int sa
             const float raw = channels[ch][i];
             const float x = std::isfinite(raw) ? raw : 0.0f;
             const double dry = static_cast<double>(x) * inGain;
-            const double linear = dry * outGain;
+            double linearDry = dry;
+            if (antialiased)
+            {
+                linearDry = linearDelay[static_cast<size_t>(ch)][static_cast<size_t>(linearPosition)];
+                linearDelay[static_cast<size_t>(ch)][static_cast<size_t>(linearPosition)] = dry;
+            }
+            const double linear = linearDry * outGain;
             double wet = linear;
-            if (clipBlend > 0 && blend > 0)
+            if ((clipBlend > 0 && blend > 0) || antialiased)
             {
                 const auto paths = useModular?modular->process(ch,dry):advanced.process(ch, dry, d, t, s, k, weights, weightSum);
                 const double mixed = (m == 1 ? paths[1] : (m == 0 ? paths[0] : paths[0] * (1 - m) + m * paths[1])) * outGain;
@@ -128,6 +136,7 @@ MeterFrame AudioEngine::process(float* const* channels, int channelCount, int sa
             meter.outputPeak = std::max(meter.outputPeak, std::abs(y));
             energy += static_cast<double>(y) * y;
         }
+        linearPosition = (linearPosition + 1) % 3;
     }
     const double count = static_cast<double>(samples) * channelCount;
     meter.outputRms = static_cast<float>(std::sqrt(energy / count));

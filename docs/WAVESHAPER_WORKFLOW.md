@@ -38,7 +38,7 @@ Its clean-sub/dirty-harmonics split remains separate from the three-band shapers
 
 ## Recall and migration
 
-Schema 6 stores all four shapers, section switches, crossovers and 808 in each
+Schema 7 stores all four shapers, section switches, crossovers and 808 in each
 whole-plugin A/B slot.
 Schema 5 slots migrate independently; removed sidechain settings are discarded.
 Schemas 1-4 initialize both slots from the old state. Old full-band CLIP/SHAPE

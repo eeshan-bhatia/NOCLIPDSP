@@ -175,6 +175,38 @@ int main()
     if(restored.state.getRawParameterValue("routing")->load()!=1||std::abs(restored.state.getRawParameterValue("curveA5")->load()-.7f)>.001f)
     { std::cerr<<"Development migration: routing="<<restored.state.getRawParameterValue("routing")->load()<<", curve="<<restored.state.getRawParameterValue("curveA5")->load()<<'\n'; return failure(14); }
 
+    auto antialiasState=std::make_unique<NoclipProcessor>();
+    antialiasState->setParameter("quality",4);
+    antialiasState->setParameter("adaa",1);
+    antialiasState->getStateInformation(bytes);
+    restored.setStateInformation(bytes.getData(),static_cast<int>(bytes.getSize()));
+    if (restored.state.getRawParameterValue("quality")->load()!=4 ||
+        restored.state.getRawParameterValue("adaa")->load()!=1) return failure(17);
+    restored.selectSnapshot(1);
+    if (restored.state.getRawParameterValue("adaa")->load()!=0) return failure(18);
+    restored.selectSnapshot(0);
+    if (restored.state.getRawParameterValue("adaa")->load()!=1) return failure(19);
+    auto oldXml=juce::AudioProcessor::getXmlFromBinary(bytes.getData(),static_cast<int>(bytes.getSize()));
+    auto schema6=juce::ValueTree::fromXml(*oldXml);
+    schema6.setProperty("version",6,nullptr);
+    const auto stripNew = [](juce::ValueTree root)
+    {
+        root.removeChild(root.getChildWithProperty("id","adaa"),nullptr);
+        root.getChildWithProperty("id","quality").setProperty("value",3,nullptr);
+    };
+    stripNew(schema6);
+    for (auto slot:schema6.getChildWithName("COMPARE")) stripNew(slot);
+    oldXml=schema6.createXml(); juce::AudioProcessor::copyXmlToBinary(*oldXml,bytes);
+    restored.setStateInformation(bytes.getData(),static_cast<int>(bytes.getSize()));
+    if (restored.state.getRawParameterValue("adaa")->load()!=0 ||
+        restored.state.getRawParameterValue("quality")->load()!=3) return failure(20);
+    restored.getStateInformation(before);
+    schema6.getChildWithProperty("id","quality").setProperty("value",4,nullptr);
+    oldXml=schema6.createXml(); juce::AudioProcessor::copyXmlToBinary(*oldXml,bytes);
+    restored.setStateInformation(bytes.getData(),static_cast<int>(bytes.getSize()));
+    restored.getStateInformation(after);
+    if (before!=after) return failure(21);
+
     std::cout << "State, rejection, layouts, restored audio and latency passed\n";
     return processingTests()+comparisonTests()==0?0:13;
 }

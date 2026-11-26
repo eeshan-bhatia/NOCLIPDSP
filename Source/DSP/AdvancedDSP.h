@@ -1,5 +1,6 @@
 #pragma once
 #include "Clipper.h"
+#include "Antiderivative.h"
 #include "CurveTable.h"
 #include "Crossover.h"
 
@@ -8,7 +9,7 @@ namespace noclip
 struct BandParameters { float drive = 0, shape = 0, gain = 0, mix = 1; bool enabled = true; };
 struct AdvancedParameters
 {
-    bool custom = false, dc = false;
+    bool custom = false, dc = false, adaa = false;
     int routing = 0; // Full band, three band, 808.
     float bias = 0, asymmetry = 0, morph = 0;
     float lowHz = 120, highHz = 2500;
@@ -48,6 +49,15 @@ private:
     CurveTable table = CurveTable::make(), previous = table;
     Smooth tableBlend;
     double sampleRate=48000, dcPole=0, fastPole=0, slowPole=0;
+    bool antialiased = false;
+    std::array<std::array<Antiderivative1, 2>, 5> antiderivatives;
+    std::array<std::array<HalfSample, 2>, 5> alignedInputs;
+    std::array<OneSample,2> bassAligned;
+    std::array<HalfSample,2> bassFiltered;
+    double transferIntegral(double x, float t, float s, float k,
+        const std::array<float, curveCount>& weights, float sum) const noexcept;
+    double filteredTransfer(size_t path, size_t channel, double x, float t, float s, float k,
+        const std::array<float, curveCount>& weights, float sum) noexcept;
     double transfer(double x, float t, float s, float k,
                     const std::array<float, curveCount>& weights, float sum) const noexcept;
 };
